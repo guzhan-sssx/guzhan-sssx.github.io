@@ -1,5 +1,196 @@
----
-layout: home
-title: My website
-subtitle: This is where I will tell my friends way too much about me
----
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" 
+            integrity="sha256-T/zFmO5s/0aSwc6ics2KLxlfbewyRz6UNw1s3Ppf5gE=" crossorigin="anonymous">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.6.0/dist/slate/bootstrap.min.css" 
+            integrity="sha256-HWVg3zL3fw4CcLn1pHUm5i+ZzZpl5Qu/ZMq9vAi02Kg=" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js" 
+            integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" 
+            integrity="sha256-/ijcOLwFf26xEYAjW75FizKVo5tnTYiQddPZoLUHHZ8=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" 
+            integrity="sha256-7dA7lq5P94hkBsWdff7qobYkp9ope/L5LQy2t/ljPLo=" crossorigin="anonymous"></script> -->
+    <link rel="stylesheet" href="js/third_party/bootstrap.min.css">
+    <script src="js/third_party/jquery.slim.min.js"></script>
+    <script src="js/third_party/popper.min.js"></script>
+    <script src="js/third_party/bootstrap.min.js"></script>
+    <script src="js/third_party/md5.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/actions.js"></script>
+    <title>最终幻想14一键连击生成器</title>
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary navbar-fixed-top">
+            <a class="navbar-brand" href="#">最终幻想14一键连击生成器</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor01"
+                aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarColor01">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link"
+                            href="https://github.com/Yuee98/FFXIVOneButtonCombo/blob/main/README.md">&nbsp;教程&nbsp;</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"
+                            href="https://github.com/Yuee98/FFXIVOneButtonCombo/issues">&nbsp;反馈&nbsp;</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/Yuee98/FFXIVOneButtonCombo/">&nbsp;GitHub&nbsp;</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://www.bilibili.com/video/BV1av411L7xG">&nbsp;视频演示&nbsp;</a>
+                    </li>
+                </ul>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button"
+                        aria-haspopup="true" aria-expanded="false">查看其他工具</a>
+                    <div class="dropdown-menu dropdown-menu-right text-right">
+                        <a class="dropdown-item" href="https://ffxiv-trigger-creator.vercel.app/">监控生成器</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="https://ffxiv-one-button-combo.vercel.app/">一键连击</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <br />
+        <br />
+        <br />
+        <br />
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <label for="job_selected">选择职业</label>
+                    <select class="form-control form-control-sm" id="job_selected">
+                    </select>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <label for="combo_selected">选择连击</label>
+                    <select class="form-control form-control-sm" id="combo_selected">
+                    </select>
+                </div>
+            </div>
+        </div>
+        <br />
+        <br />
+        <legend>连击设定</legend>
+        <div class="row" id="normal_parser">
+            <div class="col-lg-3">
+                <label>连击名称</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="combo" value="王权连">
+                <br />
+                <label>位置</label>
+                <div class=row id="position">
+                    <div class="col-lg-6">
+                        <input type="text" class="form-control form-control-sm need-hid" placeholder="热键栏" id="pos_1"
+                            value="1">
+                    </div>
+                    <div class="col-lg-6">
+                        <input type="text" class="form-control form-control-sm need-hid" placeholder="键位" id="pos_2"
+                            value="1">
+                    </div>
+                </div>
+                <br />
+                <label>操作方式</label>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="radio" class="form-check-input need-hid" name="is_corss"
+                                    id="is_corss_false" checked>
+                                键盘
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input type="radio" class="form-check-input need-hid" name="is_corss"
+                                    id="is_corss_true">
+                                手柄
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <br />
+                <button type="button" class="btn btn-primary" id="generate_button">生成</button>
+                <button type="button" class="btn btn-primary" id="clipboard_button">复制到剪切板</button>
+                <br />
+                <br />
+            </div>
+            <div class="col-lg-3">
+                <label id="label_action_1">技能1</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_1" value="">
+                <br />
+                <label id="label_action_2">技能2</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_2" value="">
+                <br />
+                <label id="label_action_3">技能3</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_3" value="">
+                <br />
+                <label id="label_action_4">技能4</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_4" value="">
+                <br />
+            </div>
+            <div class="col-lg-3">
+                <label id="label_action_5">技能5</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_5" value="">
+                <br />
+                <label id="label_action_6">技能6</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_6" value="">
+                <br />
+                <label id="label_action_7">技能7</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_7" value="">
+                <br />
+                <label id="label_action_8">技能8</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_8" value="">
+                <br />
+            </div>
+            <div class="col-lg-3">
+                <label id="label_action_9">技能9</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_9" value="">
+                <br />
+                <label id="label_action_10">技能10</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_10" value="">
+                <br />
+                <label id="label_action_11">技能11</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_11" value="">
+                <br />
+                <label id="label_action_12">技能12</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_12" value="">
+                <br />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-9 output-anchor">
+                <textarea class="form-control" id="trigger_output" rows="10"></textarea>
+            </div>
+            <div class="col-lg-3">
+                <label id="label_action_13">技能13</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_13" value="">
+                <br />
+                <label id="label_action_14">技能14</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_14" value="">
+                <br />
+                <label id="label_action_15">技能15</label>
+                <input type="text" class="form-control form-control-sm" placeholder="" id="action_15" value="">
+                <br />
+
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
