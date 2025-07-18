@@ -1,196 +1,304 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" 
-            integrity="sha256-T/zFmO5s/0aSwc6ics2KLxlfbewyRz6UNw1s3Ppf5gE=" crossorigin="anonymous">
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.6.0/dist/slate/bootstrap.min.css" 
-            integrity="sha256-HWVg3zL3fw4CcLn1pHUm5i+ZzZpl5Qu/ZMq9vAi02Kg=" crossorigin="anonymous">
-        <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js" 
-            integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" 
-            integrity="sha256-/ijcOLwFf26xEYAjW75FizKVo5tnTYiQddPZoLUHHZ8=" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" 
-            integrity="sha256-7dA7lq5P94hkBsWdff7qobYkp9ope/L5LQy2t/ljPLo=" crossorigin="anonymous"></script> -->
-    <link rel="stylesheet" href="js/third_party/bootstrap.min.css">
-    <script src="js/third_party/jquery.slim.min.js"></script>
-    <script src="js/third_party/popper.min.js"></script>
-    <script src="js/third_party/bootstrap.min.js"></script>
-    <script src="js/third_party/md5.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/actions.js"></script>
-    <title>最终幻想14一键连击生成器</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蓝牙固件升级工具</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(44, 62, 80, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+    }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: rgba(30, 40, 60, 0.7);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--primary);
+            color: #fff;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+        }
+        
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .file-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed var(--primary);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            cursor:  pointer;
+        }
+        
+        .progress-container {
+            margin: 25px 0;
+        }
+        
+        .progress-bar {
+            height: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #1abc9c);
+            border-radius: 12px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.1rem;
+            color: #fff;
+        }
+        
+        .status-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-item.success {
+            color: var(--success);
+        }
+        
+        .status-item.error {
+            color: var(--danger);
+        }
+        
+        .status-item.info {
+            color: var(--primary);
+        }
+        
+        .status-item.warning {
+            color: var(--warning);
+        }
+        
+        .uuid-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
 </head>
-
 <body>
     <div class="container">
-        <nav class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary navbar-fixed-top">
-            <a class="navbar-brand" href="#">最终幻想14一键连击生成器</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor01"
-                aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarColor01">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
-                        <a class="nav-link"
-                            href="https://github.com/Yuee98/FFXIVOneButtonCombo/blob/main/README.md">&nbsp;教程&nbsp;</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link"
-                            href="https://github.com/Yuee98/FFXIVOneButtonCombo/issues">&nbsp;反馈&nbsp;</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://github.com/Yuee98/FFXIVOneButtonCombo/">&nbsp;GitHub&nbsp;</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://www.bilibili.com/video/BV1av411L7xG">&nbsp;视频演示&nbsp;</a>
-                    </li>
-                </ul>
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button"
-                        aria-haspopup="true" aria-expanded="false">查看其他工具</a>
-                    <div class="dropdown-menu dropdown-menu-right text-right">
-                        <a class="dropdown-item" href="https://ffxiv-trigger-creator.vercel.app/">监控生成器</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="https://ffxiv-one-button-combo.vercel.app/">一键连击</a>
-                    </div>
+        <header>
+            <h1>蓝牙固件升级工具</h1>
+            <p class="subtitle">基于Web Bluetooth API的OTA升级解决方案</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="panel">
+                <h2 class="panel-title">设备控制</h2>
+                
+                <div class="uuid-display">
+                    <strong>OTA服务UUID:</strong> 1D14D6EE-FD63-4FA1-BFA4-8F47B42119F0
                 </div>
-            </div>
-        </nav>
-        <br />
-        <br />
-        <br />
-        <br />
-        <div class="row">
-            <div class="col-lg-3">
-                <div class="form-group">
-                    <label for="job_selected">选择职业</label>
-                    <select class="form-control form-control-sm" id="job_selected">
-                    </select>
+                
+                <div class="uuid-display">
+                    <strong>控制特征UUID:</strong> F7BF3564-FB6D-4E53-88A4-5E37E0326063
                 </div>
-            </div>
-            <div class="col-lg-3">
-                <div class="form-group">
-                    <label for="combo_selected">选择连击</label>
-                    <select class="form-control form-control-sm" id="combo_selected">
-                    </select>
+                
+                <div class="uuid-display">
+                    <strong>数据特征UUID:</strong> 984227F3-34FC-4045-A5D0-2C581F81A153
                 </div>
-            </div>
-        </div>
-        <br />
-        <br />
-        <legend>连击设定</legend>
-        <div class="row" id="normal_parser">
-            <div class="col-lg-3">
-                <label>连击名称</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="combo" value="王权连">
-                <br />
-                <label>位置</label>
-                <div class=row id="position">
-                    <div class="col-lg-6">
-                        <input type="text" class="form-control form-control-sm need-hid" placeholder="热键栏" id="pos_1"
-                            value="1">
+                
+                <button id="connectBtn" class="btn">连接蓝牙设备</button>
+                <button id="disconnectBtn" class="btn btn-danger">断开连接</button>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
                     </div>
-                    <div class="col-lg-6">
-                        <input type="text" class="form-control form-control-sm need-hid" placeholder="键位" id="pos_2"
-                            value="1">
-                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
                 </div>
-                <br />
-                <label>操作方式</label>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                <input type="radio" class="form-check-input need-hid" name="is_corss"
-                                    id="is_corss_false" checked>
-                                键盘
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                <input type="radio" class="form-check-input need-hid" name="is_corss"
-                                    id="is_corss_true">
-                                手柄
-                            </label>
-                        </div>
-                    </div>
+                
+                <input type="file" id="firmwareFile" class="file-input" accept=".bin">
+                
+                <button id="startBtn" class="btn btn-success" disabled>开始升级</button>
+                <button id="stopBtn" class="btn btn-warning" disabled>结束升级</button>
+            </div>
+            
+            <div class="panel">
+                <h2 class="panel-title">升级状态</h2>
+                
+                <div class="status-box" id="statusBox">
+                    <div class="status-item info">准备就绪，请连接设备并选择固件文件</div>
+                    <div class="status-item">检测到OTA服务UUID: 1D14D6EE-FD63-4FA1-BFA4-8F47B42119F0</div>
+                    <div class="status-item">控制特征UUID: F7BF3564-FB6D-4E53-88A4-5E37E0326063</div>
+                    <div class="status-item">数据特征UUID: 984227F3-34FC-4045-A5D0-2C581F81A153</div>
                 </div>
-                <br />
-                <br />
-                <button type="button" class="btn btn-primary" id="generate_button">生成</button>
-                <button type="button" class="btn btn-primary" id="clipboard_button">复制到剪切板</button>
-                <br />
-                <br />
-            </div>
-            <div class="col-lg-3">
-                <label id="label_action_1">技能1</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_1" value="">
-                <br />
-                <label id="label_action_2">技能2</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_2" value="">
-                <br />
-                <label id="label_action_3">技能3</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_3" value="">
-                <br />
-                <label id="label_action_4">技能4</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_4" value="">
-                <br />
-            </div>
-            <div class="col-lg-3">
-                <label id="label_action_5">技能5</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_5" value="">
-                <br />
-                <label id="label_action_6">技能6</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_6" value="">
-                <br />
-                <label id="label_action_7">技能7</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_7" value="">
-                <br />
-                <label id="label_action_8">技能8</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_8" value="">
-                <br />
-            </div>
-            <div class="col-lg-3">
-                <label id="label_action_9">技能9</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_9" value="">
-                <br />
-                <label id="label_action_10">技能10</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_10" value="">
-                <br />
-                <label id="label_action_11">技能11</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_11" value="">
-                <br />
-                <label id="label_action_12">技能12</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_12" value="">
-                <br />
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-9 output-anchor">
-                <textarea class="form-control" id="trigger_output" rows="10"></textarea>
-            </div>
-            <div class="col-lg-3">
-                <label id="label_action_13">技能13</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_13" value="">
-                <br />
-                <label id="label_action_14">技能14</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_14" value="">
-                <br />
-                <label id="label_action_15">技能15</label>
-                <input type="text" class="form-control form-control-sm" placeholder="" id="action_15" value="">
-                <br />
-
-            </div>
-        </div>
-    </div>
-
-</body>
-
-</html>
+                
+                <div class="info-section">
+                    <h3>升级说明:</h3>
+                    <ul style="padding-left: 20px; margin-top: 10px;">
+                        <li>1. 点击"连接蓝牙设备"按钮配对设备</li>
+                        <li>2. 选择固件(.bin)文件</li>
+                        <li>3. 点击"开始升级"传输固件数据</li>
+                        <li>4. 传输完成后点击"结束升级"完成OTA过程</li>
+Thinking...
+> 
+> 我们正在构建一个基于Web Bluetooth API的网页程序，用于通过BLE对设备进行OTA升级。我们将使用给定的UUID来与设备通信。步骤如下：
+> 
+> 1. 用户通过网页连接蓝牙设备。
+> 2. 发现指定的OTA服务（service_uuid）和两个特征：控制特征（char_ota_control_uuid）和数据特征（char_ota_data_uuid）。
+> 3. 用户选择bin文件，并开始升级。
+> 4. 发送控制命令0x00（开始升级）到控制特征。
+> 5. 将bin文件分块发送到数据特征（注意：每个包不超过20字节，因为BLE MTU通常为23，减去3字节开销，所以20字节是安全的）。
+> 6. 发送完成后，发送控制命令0x03（升级结束）到控制特征。
+> 
+> 注意：在实际应用中，我们还需要处理错误、超时以及进度显示等，但本示例主要关注基本流程。
+> 
+> 下面是详细的代码实现：
+> 
+> HTML部分（index.html）：
+> 
