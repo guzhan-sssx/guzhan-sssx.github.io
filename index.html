@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>蓝牙设备OTA升级工具</title>
+    <!-- 修复字体图标链接 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -129,7 +130,7 @@
         input, select {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2background);
         }
         
         input:focus, select:focus {
@@ -543,7 +544,7 @@
             reader.readAsArrayBuffer(firmwareFile);
         });
         
-        // 开始OTA升级
+        // 开始OTA升級
         startOtaBtn.addEventListener('click', async () => {
             if (!firmwareData || !controlCharacteristic || !dataCharacteristic) {
                 addLog('无法开始升级，请检查设备连接和固件文件', 'error');
