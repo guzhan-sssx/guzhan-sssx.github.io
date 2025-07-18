@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>蓝牙设备OTA升级工具</title>
-    <!-- 修复字体图标链接 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -16,14 +16,14 @@
             --light: #ecf0f1;
             --gray: #95a5a6;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
             background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
             background-size: 400% 400%;
@@ -32,19 +32,27 @@
             min-height: 100vh;
             padding: 20px;
         }
-        
+
         @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        
+
         header {
             text-align: center;
             margin-bottom: 30px;
@@ -55,14 +63,14 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
             color: #fff;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
-        
+
         .subtitle {
             font-size: 1.2rem;
             color: var(--light);
@@ -70,14 +78,14 @@
             margin: 0 auto;
             line-height: 1.6;
         }
-        
+
         .card-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 25px;
             margin-bottom: 30px;
         }
-        
+
         .card {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
@@ -87,12 +95,12 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
+
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
         }
-        
+
         .card h2 {
             display: flex;
             align-items: center;
@@ -103,46 +111,50 @@
             border-bottom: 2px solid var(--primary);
             padding-bottom: 12px;
         }
-        
+
         .card h2 i {
             color: var(--primary);
         }
-        
+
         .input-group {
             margin-bottom: 20px;
         }
-        
+
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
             color: var(--light);
         }
-        
-        input, select, button {
+
+        input,
+        select,
+        button {
             width: 100%;
             padding: 14px;
             border-radius: 8px;
             border: none;
             font-size: 16px;
         }
-        
-        input, select {
+
+        input,
+        select {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2background);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
-        input:focus, select:focus {
+
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--primary);
             background: rgba(255, 255, 255, 0.15);
         }
-        
+
         input::placeholder {
             color: rgba(255, 255, 255, 0.5);
         }
-        
+
         button {
             background: var(--primary);
             color: white;
@@ -154,50 +166,50 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         button:hover {
             background: #2980b9;
             transform: translateY(-2px);
         }
-        
+
         button:active {
             transform: translateY(1px);
         }
-        
+
         button:disabled {
             background: var(--gray);
             cursor: not-allowed;
             transform: none;
         }
-        
+
         .btn-success {
             background: var(--success);
         }
-        
+
         .btn-success:hover {
             background: #27ae60;
         }
-        
+
         .btn-warning {
             background: var(--warning);
         }
-        
+
         .btn-warning:hover {
             background: #e67e22;
         }
-        
+
         .btn-danger {
             background: var(--danger);
         }
-        
+
         .btn-danger:hover {
             background: #c0392b;
         }
-        
+
         .status-card {
             grid-column: 1 / -1;
         }
-        
+
         .status-content {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 10px;
@@ -207,7 +219,7 @@
             max-height: 400px;
             overflow-y: auto;
         }
-        
+
         .log-entry {
             padding: 10px;
             margin-bottom: 8px;
@@ -218,29 +230,47 @@
             gap: 10px;
             animation: fadeIn 0.3s ease;
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         .log-entry i {
             margin-top: 3px;
             min-width: 20px;
         }
-        
-        .info-log { color: var(--primary); }
-        .success-log { color: var(--success); }
-        .warning-log { color: var(--warning); }
-        .error-log { color: var(--danger); }
-        
+
+        .info-log {
+            color: var(--primary);
+        }
+
+        .success-log {
+            color: var(--success);
+        }
+
+        .warning-log {
+            color: var(--warning);
+        }
+
+        .error-log {
+            color: var(--danger);
+        }
+
         .progress-container {
             margin-top: 20px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             overflow: hidden;
         }
-        
+
         .progress-bar {
             height: 30px;
             background: var(--primary);
@@ -254,14 +284,14 @@
             font-weight: bold;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
-        
+
         .device-info {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
             margin-top: 15px;
         }
-        
+
         .device-info div {
             background: rgba(255, 255, 255, 0.1);
             padding: 12px;
@@ -269,35 +299,36 @@
             flex: 1;
             min-width: 200px;
         }
-        
+
         .device-info h3 {
             font-size: 1.1rem;
             margin-bottom: 8px;
             color: var(--primary);
         }
-        
+
         @media (max-width: 768px) {
             .card-container {
                 grid-template-columns: 1fr;
             }
-            
+
             h1 {
                 font-size: 2rem;
             }
-            
+
             .subtitle {
                 font-size: 1rem;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1><i class="fas fa-bluetooth-b"></i> 蓝牙设备OTA升级工具</h1>
             <p class="subtitle">使用Web Bluetooth API连接蓝牙设备并通过指定UUID实现固件无线升级功能。支持设备扫描、固件上传、升级进度监控等功能。</p>
         </header>
-        
+
         <div class="card-container">
             <div class="card">
                 <h2><i class="fas fa-search"></i> 设备扫描与连接</h2>
@@ -306,10 +337,10 @@
                     <input type="text" id="deviceName" placeholder="输入蓝牙设备名称...">
                 </div>
                 <button id="scanBtn">
-                    <i class="fas fa-bluetooth-b"></i> 扫描并连接设备
+                    <i class="fas fa-search"></i> 扫描并连接设备
                 </button>
             </div>
-            
+
             <div class="card">
                 <h2><i class="fas fa-upload"></i> 固件上传</h2>
                 <div class="input-group">
@@ -319,17 +350,17 @@
                 <div class="input-group">
                     <label for="chunkSize">数据包大小 (字节)</label>
                     <select id="chunkSize">
-                        <option value="20">20 字节（安全）</option>
-                        <option value="50" selected>50 字节（推荐）</option>
-                        <option value="100">100 字节（快速）</option>
-                        <option value="200">200 字节（实验性）</option>
+                        <option value="50">50 字节（安全）</option>
+                        <option value="200" selected>200 字节（推荐）</option>
+                        <option value="300">300 字节（快速）</option>
+                        <option value="450">450 字节（实验性）</option>
                     </select>
                 </div>
                 <button id="uploadBtn" class="btn-success" disabled>
                     <i class="fas fa-file-upload"></i> 上传固件
                 </button>
             </div>
-            
+
             <div class="card">
                 <h2><i class="fas fa-sync-alt"></i> OTA升级控制</h2>
                 <button id="startOtaBtn" class="btn-warning" disabled>
@@ -342,7 +373,7 @@
                     <div class="progress-bar" id="progressBar">0%</div>
                 </div>
             </div>
-            
+
             <div class="card status-card">
                 <h2><i class="fas fa-info-circle"></i> 状态与日志</h2>
                 <div class="device-info">
@@ -374,7 +405,7 @@
         const OTA_SERVICE_UUID = '1d14d6ee-fd63-4fa1-bfa4-8f47b42119f0';
         const OTA_CONTROL_CHAR_UUID = 'f7bf3564-fb6d-4e53-88a4-5e37e0326063';
         const OTA_DATA_CHAR_UUID = '984227f3-34fc-4045-a5d0-2c581f81a153';
-        
+
         // 全局变量
         let device = null;
         let server = null;
@@ -384,7 +415,7 @@
         let firmwareFile = null;
         let firmwareData = null;
         let isOtaInProgress = false;
-        
+
         // DOM元素
         const deviceNameInput = document.getElementById('deviceName');
         const scanBtn = document.getElementById('scanBtn');
@@ -397,16 +428,16 @@
         const serviceInfo = document.getElementById('serviceInfo');
         const otaStatus = document.getElementById('otaStatus');
         const statusContent = document.getElementById('statusContent');
-        
+
         // 添加日志函数
         function addLog(message, type = 'info') {
             const logEntry = document.createElement('div');
             logEntry.className = 'log-entry';
-            
+
             let iconClass = 'fas fa-info-circle';
             let colorClass = 'info-log';
-            
-            switch(type) {
+
+            switch (type) {
                 case 'success':
                     iconClass = 'fas fa-check-circle';
                     colorClass = 'success-log';
@@ -420,113 +451,113 @@
                     colorClass = 'error-log';
                     break;
             }
-            
+
             logEntry.innerHTML = `
                 <i class="${iconClass} ${colorClass}"></i>
                 <span>${new Date().toLocaleTimeString()}: ${message}</span>
             `;
-            
+
             statusContent.appendChild(logEntry);
             statusContent.scrollTop = statusContent.scrollHeight;
         }
-        
+
         // 更新进度条
         function updateProgress(percent) {
             progressBar.style.width = `${percent}%`;
             progressBar.textContent = `${Math.round(percent)}%`;
         }
-        
+
         // 扫描并连接设备
         scanBtn.addEventListener('click', async () => {
             if (!navigator.bluetooth) {
                 addLog('您的浏览器不支持Web Bluetooth API', 'error');
                 return;
             }
-            
+
             const deviceName = deviceNameInput.value.trim();
-            
+
             if (!deviceName) {
                 addLog('请输入要连接的设备名称', 'warning');
                 return;
             }
-            
+
             addLog(`正在扫描设备: ${deviceName}...`);
-            
+
             try {
                 device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: deviceName }],
+                    filters: [{name: deviceName}],
                     optionalServices: [OTA_SERVICE_UUID]
                 });
-                
+
                 addLog(`找到设备: ${device.name}`, 'success');
                 deviceInfo.textContent = `名称: ${device.name}, ID: ${device.id}`;
-                
+
                 addLog('正在连接设备...');
                 server = await device.gatt.connect();
                 addLog('设备连接成功!', 'success');
-                
+
                 addLog(`正在获取OTA服务 (${OTA_SERVICE_UUID})...`);
                 otaService = await server.getPrimaryService(OTA_SERVICE_UUID);
                 serviceInfo.textContent = `服务: ${OTA_SERVICE_UUID}`;
                 addLog('OTA服务获取成功!', 'success');
-                
+
                 addLog(`正在获取控制特征 (${OTA_CONTROL_CHAR_UUID})...`);
                 controlCharacteristic = await otaService.getCharacteristic(OTA_CONTROL_CHAR_UUID);
                 addLog('控制特征获取成功!', 'success');
-                
+
                 addLog(`正在获取数据特征 (${OTA_DATA_CHAR_UUID})...`);
                 dataCharacteristic = await otaService.getCharacteristic(OTA_DATA_CHAR_UUID);
                 addLog('数据特征获取成功!', 'success');
-                
+
                 addLog('设备准备就绪，请上传固件文件', 'success');
                 uploadBtn.disabled = false;
                 otaStatus.textContent = '准备升级';
-                
+
                 // 设备断开事件监听
                 device.addEventListener('gattserverdisconnected', () => {
                     addLog('设备已断开连接', 'warning');
                     resetConnection();
                 });
-                
+
             } catch (error) {
                 addLog(`连接过程中出错: ${error.message}`, 'error');
                 resetConnection();
             }
         });
-        
+
         // 处理固件文件选择
         firmwareFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             if (!file.name.endsWith('.bin')) {
                 addLog('请选择有效的.bin固件文件', 'error');
                 return;
             }
-            
+
             firmwareFile = file;
             addLog(`已选择固件文件: ${file.name} (${formatFileSize(file.size)})`, 'success');
             startOtaBtn.disabled = false;
             uploadBtn.disabled = false;
         });
-        
+
         // 上传固件按钮
         uploadBtn.addEventListener('click', async () => {
             if (!firmwareFile) {
                 addLog('请先选择固件文件', 'warning');
                 return;
             }
-            
+
             uploadBtn.disabled = true;
             addLog('正在读取固件文件...');
-            
+
             const reader = new FileReader();
-            
+
             reader.onload = async (e) => {
                 try {
                     const arrayBuffer = e.target.result;
                     firmwareData = new Uint8Array(arrayBuffer);
-                    
+
                     addLog(`固件读取成功! 文件大小: ${formatFileSize(firmwareFile.size)}`, 'success');
                     startOtaBtn.disabled = false;
                     uploadBtn.disabled = true;
@@ -535,66 +566,68 @@
                     uploadBtn.disabled = false;
                 }
             };
-            
+
             reader.onerror = () => {
                 addLog('读取固件文件时出错', 'error');
                 uploadBtn.disabled = false;
             };
-            
+
             reader.readAsArrayBuffer(firmwareFile);
         });
-        
-        // 开始OTA升級
+
+        // 开始OTA升级
         startOtaBtn.addEventListener('click', async () => {
             if (!firmwareData || !controlCharacteristic || !dataCharacteristic) {
                 addLog('无法开始升级，请检查设备连接和固件文件', 'error');
                 return;
             }
-            
+
             if (isOtaInProgress) {
                 addLog('升级已在进程中', 'warning');
                 return;
             }
-            
+
             isOtaInProgress = true;
             startOtaBtn.disabled = true;
             endOtaBtn.disabled = false;
             otaStatus.textContent = '升级中...';
-            
+
             try {
                 addLog('发送升级开始命令 (0x00)...');
                 await controlCharacteristic.writeValue(new Uint8Array([0x00]));
                 addLog('升级开始命令发送成功!', 'success');
-                
+
                 const chunkSize = parseInt(document.getElementById('chunkSize').value);
                 const totalChunks = Math.ceil(firmwareData.length / chunkSize);
                 let chunksSent = 0;
-                
+
                 addLog(`开始传输固件数据 (${totalChunks}个数据包, 每包${chunkSize}字节)...`);
-                
+
                 // 分批发送数据
                 for (let i = 0; i < firmwareData.length; i += chunkSize) {
                     if (!isOtaInProgress) {
                         addLog('升级已中止', 'warning');
                         break;
                     }
-                    
+
                     const chunk = firmwareData.slice(i, i + chunkSize);
                     await dataCharacteristic.writeValueWithoutResponse(chunk);
-                    
+
                     chunksSent++;
                     const percent = Math.round((chunksSent / totalChunks) * 100);
                     updateProgress(percent);
-                    
+
                     // 每10个数据包更新一次日志
-                    if (chunksSent % 10 === 0 || chunksSent === totalChunks) {
+                    if (chunksSent % 100 === 0 || chunksSent === totalChunks) {
                         addLog(`已发送 ${chunksSent}/${totalChunks} 个数据包 (${percent}%)`);
                     }
-                    
+
                     // 添加延迟以避免发送过快
                     await new Promise(resolve => setTimeout(resolve, 20));
+                    // await new Promise(resolve => setTimeout(resolve, 10));
+
                 }
-                
+
                 if (isOtaInProgress) {
                     addLog('固件数据传输完成!', 'success');
                     addLog('发送升级结束命令 (0x03)...');
@@ -603,7 +636,7 @@
                     addLog('固件升级完成! 设备可能需要重启', 'success');
                     otaStatus.textContent = '升级完成';
                 }
-                
+
             } catch (error) {
                 addLog(`升级过程中出错: ${error.message}`, 'error');
                 otaStatus.textContent = '升级失败';
@@ -613,29 +646,29 @@
                 endOtaBtn.disabled = true;
             }
         });
-        
+
         // 结束OTA升级
         endOtaBtn.addEventListener('click', async () => {
             if (!isOtaInProgress) {
                 addLog('当前没有进行中的升级', 'warning');
                 return;
             }
-            
+
             try {
                 addLog('正在中止升级...');
                 isOtaInProgress = false;
                 endOtaBtn.disabled = true;
-                
+
                 addLog('发送升级结束命令 (0x03)...');
                 await controlCharacteristic.writeValue(new Uint8Array([0x03]));
                 addLog('升级已中止', 'warning');
                 otaStatus.textContent = '已中止';
-                
+
             } catch (error) {
                 addLog(`中止升级过程中出错: ${error.message}`, 'error');
             }
         });
-        
+
         // 重置连接
         function resetConnection() {
             device = null;
@@ -643,31 +676,32 @@
             otaService = null;
             controlCharacteristic = null;
             dataCharacteristic = null;
-            
+
             startOtaBtn.disabled = true;
             endOtaBtn.disabled = true;
             uploadBtn.disabled = true;
-            
+
             deviceInfo.textContent = '未连接设备';
             serviceInfo.textContent = '未连接服务';
             otaStatus.textContent = '准备就绪';
-            
+
             updateProgress(0);
         }
-        
+
         // 格式化文件大小
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
-            
+
             const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
-            
+
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-        
+
         // 初始化
         addLog('应用初始化完成，准备扫描设备');
     </script>
 </body>
+
 </html>
