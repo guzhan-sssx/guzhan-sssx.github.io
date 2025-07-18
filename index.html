@@ -27,5 +27,323 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             padding: 40px;
             max-width: 500px;
-            width: 100%;以下是一个使用 GitHub 静态网页功能实现扫描指定蓝牙名称并能连接的网页的 HTML 代码示例:
+            width: 100%;
+        }
 
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .scan-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .scan-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .scan-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .disconnect-btn {
+            background: #f56565;
+            color: white;
+        }
+
+        .disconnect-btn:hover {
+            background: #e53e3e;
+            transform: translateY(-1px);
+        }
+
+        .disconnect-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status.info {
+            background: #bee3f8;
+            color: #2b6cb0;
+            border: 1px solid #90cdf4;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #feb2b2;
+        }
+
+        .device-info {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .device-info h3 {
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .device-info p {
+            color: #4a5568;
+            margin: 4px 0;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 蓝牙设备连接器</h1>
+        
+        <div class="warning">
+            ⚠️ 注意：此功能需要 HTTPS 环境和支持 Web Bluetooth API 的现代浏览器（Chrome、Edge等）。
+        </div>
+
+        <div class="input-group">
+            <label for="deviceName">设备名称:</label>
+            <input type="text" id="deviceName" placeholder="输入要连接的蓝牙设备名称" value="ESP32">
+        </div>
+
+        <div class="button-group">
+            <button id="scanBtn" class="scan-btn">🔍 扫描并连接</button>
+            <button id="disconnectBtn" class="disconnect-btn" disabled>❌ 断开连接</button>
+        </div>
+
+        <div id="status"></div>
+        <div id="deviceInfo"></div>
+    </div>
+
+    <script>
+        class BluetoothConnector {
+            constructor() {
+                this.device = null;
+                this.server = null;
+                this.isConnected = false;
+                
+                this.scanBtn = document.getElementById('scanBtn');
+                this.disconnectBtn = document.getElementById('disconnectBtn');
+                this.deviceNameInput = document.getElementById('deviceName');
+                this.statusDiv = document.getElementById('status');
+                this.deviceInfoDiv = document.getElementById('deviceInfo');
+                
+                this.initEventListeners();
+                this.checkBluetoothSupport();
+            }
+
+            initEventListeners() {
+                this.scanBtn.addEventListener('click', () => this.scanAndConnect());
+                this.disconnectBtn.addEventListener('click', () => this.disconnect());
+            }
+
+            checkBluetoothSupport() {
+                if (!navigator.bluetooth) {
+                    this.showStatus('error', '❌ 您的浏览器不支持 Web Bluetooth API');
+                    this.scanBtn.disabled = true;
+                    return false;
+                }
+                return true;
+            }
+
+            showStatus(type, message) {
+                this.statusDiv.className = `status ${type}`;
+                this.statusDiv.textContent = message;
+                this.statusDiv.style.display = 'block';
+            }
+
+            showDeviceInfo(device) {
+                this.deviceInfoDiv.innerHTML = `
+                    <div class="device-info">
+                        <h3>📱 设备信息</h3>
+                        <p><strong>名称:</strong> ${device.name || '未知'}</p>
+                        <p><strong>ID:</strong> ${device.id}</p>
+                        <p><strong>连接状态:</strong> ${device.gatt.connected ? '已连接' : '未连接'}</p>
+                    </div>
+                `;
+            }
+
+            async scanAndConnect() {
+                const deviceName = this.deviceNameInput.value.trim();
+                
+                if (!deviceName) {
+                    this.showStatus('error', '❌ 请输入设备名称');
+                    return;
+                }
+
+                if (!this.checkBluetoothSupport()) {
+                    return;
+                }
+
+                try {
+                    this.scanBtn.disabled = true;
+                    this.showStatus('info', '🔍 正在扫描蓝牙设备...');
+
+                    // 请求蓝牙设备
+                    const options = {
+                        filters: [{ name: deviceName }],
+                        optionalServices: ['generic_access', 'generic_attribute']
+                    };
+
+                    this.device = await navigator.bluetooth.requestDevice(options);
+                    
+                    this.showStatus('info', '🔗 正在连接设备...');
+                    
+                    // 连接到 GATT 服务器
+                    this.server = await this.device.gatt.connect();
+                    
+                    this.isConnected = true;
+                    this.showStatus('success', `✅ 成功连接到 ${this.device.name}`);
+                    this.showDeviceInfo(this.device);
+                    
+                    // 更新按钮状态
+                    this.scanBtn.disabled = false;
+                    this.disconnectBtn.disabled = false;
+                    
+                    // 监听设备断开事件
+                    this.device.addEventListener('gattserverdisconnected', () => {
+                        this.handleDisconnection();
+                    });
+
+                } catch (error) {
+                    console.error('连接错误:', error);
+                    this.handleConnectionError(error);
+                } finally {
+                    this.scanBtn.disabled = false;
+                }
+            }
+
+            handleConnectionError(error) {
+                let errorMessage = '❌ 连接失败：';
+                
+                if (error.name === 'NotFoundError') {
+                    errorMessage += '未找到指定名称的设备';
+                } else if (error.name === 'SecurityError') {
+                    errorMessage += '需要用户手势触发或HTTPS环境';
+                } else if (error.name === 'NetworkError') {
+                    errorMessage += '网络错误，设备可能不在范围内';
+                } else if (error.name === 'AbortError') {
+                    errorMessage += '用户取消了操作';
+                } else {
+                    errorMessage += error.message || '未知错误';
+                }
+                
+                this.showStatus('error', errorMessage);
+            }
+
+            async disconnect() {
+                if (this.device && this.device.gatt.connected) {
+                    try {
+                        await this.device.gatt.disconnect();
+                        this.handleDisconnection();
+                        this.showStatus('info', '🔌 设备已断开连接');
+                    } catch (error) {
+                        console.error('断开连接错误:', error);
+                        this.showStatus('error', '❌ 断开连接时发生错误');
+                    }
+                }
+            }
+
+            handleDisconnection() {
+                this.isConnected = false;
+                this.disconnectBtn.disabled = true;
+                this.deviceInfoDiv.innerHTML = '';
+                
+                if (this.statusDiv.className.includes('success')) {
+                    this.showStatus('info', '🔌 设备已断开连接');
+                }
+            }
+        }
+
+        // 初始化蓝牙连接器
+        document.addEventListener('DOMContentLoaded', () => {
+            new BluetoothConnector();
+        });
+    </script>
+</body>
+</html>
