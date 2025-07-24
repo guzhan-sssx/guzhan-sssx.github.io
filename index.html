@@ -484,8 +484,11 @@
             addLog(`正在扫描设备: ${deviceName}...`);
 
             try {
+                // 支持部分匹配的扫描
                 device = await navigator.bluetooth.requestDevice({
-                    filters: [{name: deviceName}],
+                    filters: [{
+                        namePrefix: deviceName
+                    }],
                     optionalServices: [OTA_SERVICE_UUID]
                 });
 
@@ -624,8 +627,6 @@
 
                     // 添加延迟以避免发送过快
                     await new Promise(resolve => setTimeout(resolve, 20));
-                    // await new Promise(resolve => setTimeout(resolve, 10));
-
                 }
 
                 if (isOtaInProgress) {
