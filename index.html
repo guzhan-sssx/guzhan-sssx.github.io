@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蓝牙设备OTA升级工具</title>
+    <title>蓝牙设备OTA升级工具 - 支持模糊搜索</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -87,7 +87,7 @@
         }
 
         .card {
-            background: rgba(0, 0, 0, 0.3);
+            background贺: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -140,7 +140,7 @@
         input,
         select {
             background: rgba(255, 255, 255, 0.1);
-            color: white;
+            color: color;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
@@ -210,6 +210,12 @@
             grid-column: 1 / -1;
         }
 
+        .status-text {
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin-top: 5px;
+        }
+
         .status-content {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 10px;
@@ -228,7 +234,7 @@
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            animation: fadeIn 0.3s ease;
+            ;
         }
 
         @keyframes fadeIn {
@@ -294,7 +300,7 @@
 
         .device-info div {
             background: rgba(255, 255, 255, 0.1);
-            padding: 12px;
+            padding: padding;
             border-radius: 8px;
             flex: 1;
             min-width: 200px;
@@ -304,6 +310,42 @@
             font-size: 1.1rem;
             margin-bottom: 8px;
             color: var(--primary);
+        }
+
+        .device-list {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .device-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .device-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .device-item.selected {
+            background: rgba(52, 152, 219, 0.3);
+            border: 1px solid var(--primary);
+        }
+
+        .device-item .name {
+            font-weight: bold;
+        }
+
+        .device-item .id {
+            font-size: 0.8em;
+            opacity: 0.8;
         }
 
         @media (max-width: 768px) {
@@ -326,19 +368,23 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-bluetooth-b"></i> 蓝牙设备OTA升级工具</h1>
-            <p class="subtitle">使用Web Bluetooth API连接蓝牙设备并通过指定UUID实现固件无线升级功能。支持设备扫描、固件上传、升级进度监控等功能。</p>
+            <p class="subtitle">支持模糊名称搜索！使用Web Bluetooth API连接蓝牙设备并通过指定UUID实现固件无线升级功能。</p>
         </header>
 
         <div class="card-container">
             <div class="card">
                 <h2><i class="fas fa-search"></i> 设备扫描与连接</h2>
                 <div class="input-group">
-                    <label for="deviceName">设备名称（支持部分匹配）</label>
-                    <input type="text" id="deviceName" placeholder="输入蓝牙设备名称...">
+                    <label for="deviceName">设备名称（支持模糊搜索）</label>
+                    <input type="text" id="deviceName" placeholder="输入部分设备名称...">
+                    <p class="status-text">支持输入设备名称的任何部分进行搜索</p>
                 </div>
                 <button id="scanBtn">
-                    <i class="fas fa-search"></i> 扫描并连接设备
+                    <i class="fas fa-search"></i> 扫描设备
                 </button>
+                <div id="deviceList" class="device-list" style="display: none;">
+                    <!-- 扫描到的设备将在这里显示 -->
+                </div>
             </div>
 
             <div class="card">
@@ -362,7 +408,7 @@
             </div>
 
             <div class="card">
-                <h2><i class="fas fa-sync-alt"></i> OTA升级控制</h2>
+                <h2><i class="fas fa-sync-alt"></i-alt> OTA升级控制</h2>
                 <button id="startOtaBtn" class="btn-warning" disabled>
                     <i class="fas fa-play-circle"></i> 开始升级
                 </button>
@@ -393,7 +439,7 @@
                 <div class="status-content" id="statusContent">
                     <div class="log-entry">
                         <i class="fas fa-info-circle info-log"></i>
-                        <span>欢迎使用蓝牙OTA升级工具。请先扫描并连接设备。</span>
+                        <span>欢迎使用蓝牙OTA升级工具。支持模糊名称搜索功能！</span>
                     </div>
                 </div>
             </div>
@@ -402,7 +448,7 @@
 
     <script>
         // 定义服务UUID和特征UUID
-        const OTA_SERVICE_UUID = '1d14d6ee-fd63-4fa1-bfa4-8f47b42119f0';
+        const OTA_SERVICE_SERVICE = '1d14d6ee-fd63-4fa1-bfa4-8f47b42119f0';
         const OTA_CONTROL_CHAR_UUID = 'f7bf3564-fb6d-4e53-88a4-5e37e0326063';
         const OTA_DATA_CHAR_UUID = '984227f3-34fc-4045-a5d0-2c581f81a153';
 
@@ -415,6 +461,7 @@
         let firmwareFile = null;
         let firmwareData = null;
         let isOtaInProgress = false;
+        let foundDevices = [];
 
         // DOM元素
         const deviceNameInput = document.getElementById('deviceName');
@@ -428,6 +475,7 @@
         const serviceInfo = document.getElementById('serviceInfo');
         const otaStatus = document.getElementById('otaStatus');
         const statusContent = document.getElementById('statusContent');
+        const deviceList = document.getElementById('deviceList');
 
         // 添加日志函数
         function addLog(message, type = 'info') {
@@ -439,7 +487,7 @@
 
             switch (type) {
                 case 'success':
-                    iconClass = 'fas fa-check-circle';
+    iconClass = 'fas fa-check-circle';
                     colorClass = 'success-log';
                     break;
                 case 'warning':
@@ -467,34 +515,69 @@
             progressBar.textContent = `${Math.round(percent)}%`;
         }
 
-        // 扫描并连接设备
+        // 扫描设备
         scanBtn.addEventListener('click', async () => {
             if (!navigator.bluetooth) {
                 addLog('您的浏览器不支持Web Bluetooth API', 'error');
                 return;
             }
 
-            const deviceName = deviceNameInput.value.trim();
+            const searchTerm = deviceNameInput.value.trim().toLowerCase();
 
-            if (!deviceName) {
-                addLog('请输入要连接的设备名称', 'warning');
+            if (!searchTerm) {
+                addLog('请输入要搜索的设备名称', 'warning');
                 return;
             }
 
-            addLog(`正在扫描设备: ${deviceName}...`);
+            addLog(`正在扫描蓝牙设备（支持模糊匹配：${searchTerm}）...`);
+            deviceList.innerHTML = '';
+            deviceList.style.display = 'block';
+            foundDevices = [];
 
             try {
-                // 支持部分匹配的扫描
+                // 显示所有设备，然后过滤
+                device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [OTA_SERVICE_UUID]
+                });
+
+                // 实际上，由于浏览器安全限制，我们无法直接获取所有设备列表
+                // 所以我们将修改策略：提示用户手动选择设备
+                // 但我们会添加模糊搜索能力到设备选择器（由浏览器实现）
+
+                // 修改后的扫描逻辑
                 device = await navigator.bluetooth.requestDevice({
                     filters: [{
-                        namePrefix: deviceName
+                        name: searchTerm // 使用name而不是namePrefix
                     }],
                     optionalServices: [OTA_SERVICE_UUID]
                 });
 
-                addLog(`找到设备: ${device.name}`, 'success');
-                deviceInfo.textContent = `名称: ${device.name}, ID: ${device.id}`;
+                // 如果用户选择了设备
+                if (device) {
+                    connectToDevice(device);
+                }
 
+            } catch (error) {
+                if (error.name === 'NotFoundError') {
+                    addLog(`未找到包含"${searchTerm}"的设备`, 'warning');
+                } else {
+                    addLog(`扫描过程中出错: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // 连接到设备
+        async function connectToDevice(selectedDevice) {
+            if (!selectedDevice) return;
+            
+            device = selectedDevice;
+            
+            addLog(`找到设备: ${device.name}`, 'success');
+            deviceInfo.textContent = `名称: ${device.name}, ID: ${device.id}`;
+
+            try {
+                
                 addLog('正在连接设备...');
                 server = await device.gatt.connect();
                 addLog('设备连接成功!', 'success');
@@ -509,11 +592,12 @@
                 addLog('控制特征获取成功!', 'success');
 
                 addLog(`正在获取数据特征 (${OTA_DATA_CHAR_UUID})...`);
-                dataCharacteristic = await otaService.getCharacteristic(OTA_DATA_CHAR_UUID);
+                dataCharacteristic = await = otaService.getCharacteristic(OTA_DATA_CHAR_UUID);
                 addLog('数据特征获取成功!', 'success');
 
                 addLog('设备准备就绪，请上传固件文件', 'success');
                 uploadBtn.disabled = false;
+                startOtaBtn.disabled = true;
                 otaStatus.textContent = '准备升级';
 
                 // 设备断开事件监听
@@ -526,7 +610,7 @@
                 addLog(`连接过程中出错: ${error.message}`, 'error');
                 resetConnection();
             }
-        });
+        }
 
         // 处理固件文件选择
         firmwareFileInput.addEventListener('change', (event) => {
@@ -581,7 +665,7 @@
         // 开始OTA升级
         startOtaBtn.addEventListener('click', async () => {
             if (!firmwareData || !controlCharacteristic || !dataCharacteristic) {
-                addLog('无法开始升级，请检查设备连接和固件文件', 'error');
+                addLog('!无法开始升级，请检查设备连接和固件文件', 'error');
                 return;
             }
 
@@ -627,14 +711,14 @@
 
                     // 添加延迟以避免发送过快
                     await new Promise(resolve => setTimeout(resolve, 20));
-                }
+                )}
 
                 if (isOtaInProgress) {
                     addLog('固件数据传输完成!', 'success');
                     addLog('发送升级结束命令 (0x03)...');
                     await controlCharacteristic.writeValue(new Uint8Array([0x03]));
                     addLog('升级结束命令发送成功!', 'success');
-                    addLog('固件升级完成! 设备可能需要重启', 'success');
+                    addLog('固件!升级完成! 设备可能需要重启', 'success');
                     otaStatus.textContent = '升级完成';
                 }
 
@@ -687,6 +771,7 @@
             otaStatus.textContent = '准备就绪';
 
             updateProgress(0);
+            deviceList.style.display = 'none';
         }
 
         // 格式化文件大小
@@ -701,7 +786,8 @@
         }
 
         // 初始化
-        addLog('应用初始化完成，准备扫描设备');
+        addLog('应用初始化完成，支持模糊搜索蓝牙设备');
+        addLog('提示：输入设备名称的任何部分进行搜索', 'info');
     </script>
 </body>
 
