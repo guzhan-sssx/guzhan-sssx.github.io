@@ -3,67 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>极简黑 - 时钟与天气</title>
+    <title>南京 - 复古翻页时钟</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 引入具有科技感的等宽字体，非常适合数字时钟 */
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-        body { 
-            font-family: 'JetBrains Mono', monospace; 
-            background-color: #050505; /* 纯正的深黑色背景 */
+        /* 引入适合复古时钟的无衬线粗体 */
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+        
+        body {
+            /* 黑色基调的动态渐变背景 */
+            background: linear-gradient(-45deg, #000000, #121212, #050505, #1a1a1a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            overflow: hidden;
         }
-        /* 为时钟添加轻微的发光效果 */
-        .glow-text {
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+
+        /* 背景渐变动画 */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 背景中心呼吸光晕 */
+        .glow-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 60%);
+            animation: pulse 6s infinite alternate ease-in-out;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+        }
+
+        /* 复古翻页卡片样式 */
+        .flip-card {
+            position: relative;
+            background-color: #141414;
+            color: #e5e5e5;
+            font-family: 'Oswald', sans-serif;
+            border-radius: 12px;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.8), inset 0 2px 2px rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 120px;
+            height: 160px;
+            font-size: 6rem;
+            font-weight: 700;
+            z-index: 10;
+        }
+
+        @media (min-width: 768px) {
+            .flip-card { width: 160px; height: 200px; font-size: 8rem; }
+        }
+
+        /* 翻页卡片中间的分割线 */
+        .flip-card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #000000;
+            box-shadow: 0 1px 1px rgba(255,255,255,0.1);
+            transform: translateY(-50%);
+        }
+
+        /* 卡片上半部分的暗角效果 */
+        .flip-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
         }
     </style>
 </head>
-<body class="text-gray-200 h-screen flex flex-col items-center justify-center overflow-hidden selection:bg-gray-700">
+<body class="h-screen flex flex-col items-center justify-center selection:bg-gray-700">
 
-    <div class="flex flex-col items-center gap-10">
+    <div class="glow-overlay"></div>
+
+    <div class="z-10 flex flex-col items-center gap-12">
         
-        <div id="clock" class="text-7xl md:text-9xl font-bold tracking-widest text-white glow-text transition-all">
-            00:00:00
+        <div class="flex items-center gap-4 md:gap-6">
+            <div class="flip-card" id="hours">00</div>
+            <div class="text-4xl md:text-6xl font-bold text-gray-500 pb-4 animate-pulse">:</div>
+            <div class="flip-card" id="minutes">00</div>
+            <div class="text-4xl md:text-6xl font-bold text-gray-500 pb-4 animate-pulse">:</div>
+            <div class="flip-card" id="seconds">00</div>
         </div>
 
-        <div class="flex items-center gap-4 text-xl md:text-2xl text-gray-400 bg-[#111111] px-8 py-4 rounded-2xl border border-gray-800 shadow-2xl">
-            <span id="weather-icon" class="text-2xl">⏳</span>
-            <span id="temperature" class="font-medium">加载天气中...</span>
+        <div class="flex flex-col items-center gap-2">
+            <div class="flex items-center gap-4 text-xl md:text-2xl text-gray-300 bg-[#111111] px-8 py-4 rounded-xl border border-gray-800 shadow-2xl tracking-widest">
+                <span class="text-gray-500 text-sm mr-2">📍 南京</span>
+                <span id="weather-desc" class="font-medium text-gray-200">加载中</span>
+                <span class="text-gray-700">|</span>
+                <span id="temperature" class="font-medium">-- °C</span>
+            </div>
+            <div id="date" class="text-gray-500 text-sm tracking-widest mt-2">--</div>
         </div>
 
-    </div>
-
-    <div id="date" class="fixed bottom-10 text-gray-500 text-sm tracking-widest">
-        --
     </div>
 
     <script>
-        // 1. 时间和日期更新功能
-        function updateTime() {
+        // 1. 时钟更新逻辑
+        function updateClock() {
             const now = new Date();
             
-            // 格式化时间
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+            document.getElementById('hours').textContent = String(now.getHours()).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(now.getSeconds()).padStart(2, '0');
 
-            // 格式化日期
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
             document.getElementById('date').textContent = now.toLocaleDateString('zh-CN', options);
         }
         
-        setInterval(updateTime, 1000); // 每秒刷新一次
-        updateTime(); // 立即执行一次，避免页面加载时的延迟
+        setInterval(updateClock, 1000);
+        updateClock();
 
-        // 2. 天气获取功能 (使用免费的 Open-Meteo API)
-        // 默认经纬度设置为新加坡 (你可以修改 lat 和 lon 变量为你所在的城市)
-        const lat = 1.3521;
-        const lon = 103.8198;
+        // 2. 南京天气获取逻辑 (南京经纬度: 32.0603, 118.7969)
+        const lat = 32.0603;
+        const lon = 118.7969;
         
         async function fetchWeather() {
             try {
-                // 调用天气接口
                 const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const data = await response.json();
                 
@@ -71,27 +150,29 @@
                     const temp = data.current_weather.temperature;
                     const weatherCode = data.current_weather.weathercode;
                     
-                    // 根据 WMO 国际气象代码转换对应的 Emoji 图标
-                    let icon = '☁️';
-                    if (weatherCode === 0) icon = '☀️'; // 晴朗
-                    else if (weatherCode >= 1 && weatherCode <= 3) icon = '⛅'; // 多云/阴天
-                    else if (weatherCode >= 51 && weatherCode <= 67) icon = '🌧️'; // 雨
-                    else if (weatherCode >= 71 && weatherCode <= 77) icon = '❄️'; // 雪
-                    else if (weatherCode >= 95) icon = '⛈️'; // 雷暴
+                    // 将 WMO 气象代码转换为中文文字描述
+                    let desc = '未知';
+                    if (weatherCode === 0) desc = '晴朗'; 
+                    else if (weatherCode >= 1 && weatherCode <= 3) desc = '多云';
+                    else if (weatherCode === 45 || weatherCode === 48) desc = '雾';
+                    else if (weatherCode >= 51 && weatherCode <= 67) desc = '雨';
+                    else if (weatherCode >= 71 && weatherCode <= 77) desc = '雪';
+                    else if (weatherCode >= 80 && weatherCode <= 82) desc = '阵雨';
+                    else if (weatherCode >= 85 && weatherCode <= 86) desc = '阵雪';
+                    else if (weatherCode >= 95) desc = '雷暴';
                     
-                    // 更新页面显示
                     document.getElementById('temperature').textContent = `${temp} °C`;
-                    document.getElementById('weather-icon').textContent = icon;
+                    document.getElementById('weather-desc').textContent = desc;
                 }
             } catch (error) {
                 console.error('天气获取失败:', error);
-                document.getElementById('temperature').textContent = '数据离线';
-                document.getElementById('weather-icon').textContent = '⚠️';
+                document.getElementById('temperature').textContent = '离线';
+                document.getElementById('weather-desc').textContent = '获取失败';
             }
         }
         
         fetchWeather();
-        // 每 30 分钟 (1800000 毫秒) 后台自动刷新一次天气数据
+        // 每 30 分钟刷新一次天气
         setInterval(fetchWeather, 30 * 60 * 1000);
     </script>
 </body>
