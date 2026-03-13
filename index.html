@@ -3,66 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人主页</title>
+    <title>随机壁纸实验室</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        /* 全屏背景平铺设置 */
+        .bg-wallpaper {
+            background-image: url('https://source.unsplash.com/random/1920x1080?nature,scenery');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out;
+        }
+        /* 毛玻璃容器 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-wallpaper h-screen flex items-center justify-center">
 
-    <nav class="fixed w-full z-50 glass border-b border-slate-200">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
-            <span class="text-xl font-bold tracking-tight text-blue-600">Dev.Log</span>
-            <div class="space-x-8 text-sm font-medium">
-                <a href="#about" class="hover:text-blue-600 transition">关于</a>
-                <a href="#projects" class="hover:text-blue-600 transition">项目</a>
-                <a href="#contact" class="hover:text-blue-600 transition">联系我</a>
-            </div>
-        </div>
-    </nav>
-
-    <section class="pt-32 pb-20 px-6">
-        <div class="max-w-5xl mx-auto text-center">
-            <h1 class="text-5xl md:text-7xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500">
-                你好，我是开发者
-            </h1>
-            <p class="text-lg text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-                专注于嵌入式开发与 UI 设计。正在探索 ESP32、STM32 与 LVGL 的无限可能，致力于打造极致的用户交互体验。
+    <div class="glass-card p-10 rounded-3xl text-center shadow-2xl max-w-md mx-4">
+        <h1 class="text-3xl font-bold text-white mb-4 drop-shadow-md">
+            随机壁纸
+        </h1>
+        <p class="text-white/80 mb-8 leading-relaxed">
+            每一次刷新，都是一场未知的视觉旅行。
+        </p>
+        
+        <div class="flex flex-col gap-3">
+            <button onclick="location.reload()" 
+                    class="px-8 py-3 bg-white text-slate-900 rounded-xl font-bold hover:scale-105 transition-transform active:scale-95 shadow-lg">
+                更换一张
+            </button>
+            
+            <p class="text-xs text-white/50 mt-4 italic">
+                Powered by Unsplash Engine
             </p>
-            <div class="flex justify-center gap-4">
-                <a href="#projects" class="px-8 py-3 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-200">查看作品</a>
-                <a href="https://github.com" class="px-8 py-3 bg-white border border-slate-200 rounded-full font-semibold hover:bg-slate-50 transition">GitHub</a>
-            </div>
         </div>
-    </section>
+    </div>
 
-    <section id="projects" class="py-20 bg-white">
-        <div class="max-w-5xl mx-auto px-6">
-            <h2 class="text-3xl font-bold mb-12">精选项目</h2>
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="group p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition">
-                    <div class="w-12 h-12 bg-blue-100 rounded-2xl mb-4 flex items-center justify-center group-hover:bg-blue-600 transition">
-                        <svg class="w-6 h-6 text-blue-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-2">ESP32 导航终端</h3>
-                    <p class="text-slate-600 text-sm">基于 ESP32-S3 和 LVGL 开发的户外导航系统，支持蓝牙同步与实时地图显示。</p>
-                </div>
-                <div class="group p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition">
-                    <div class="w-12 h-12 bg-indigo-100 rounded-2xl mb-4 flex items-center justify-center group-hover:bg-indigo-600 transition">
-                        <svg class="w-6 h-6 text-indigo-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4m0 5c0 2.21-3.58 4-8 4s-8-1.79-8-4"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold mb-2">智能工位监控</h3>
-                    <p class="text-slate-600 text-sm">结合 STM32 与各类传感器，实现环境温湿度、空气质量的实时监测与报警。</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer id="contact" class="py-12 border-t border-slate-200 text-center">
-        <p class="text-slate-400 text-sm">© 2026 Crafted with ❤️ by YourName</p>
+    <footer class="fixed bottom-6 text-white/40 text-sm">
+        按下 <kbd class="bg-white/20 px-2 py-1 rounded text-xs text-white">F5</kbd> 发现更多美感
     </footer>
 
 </body>
