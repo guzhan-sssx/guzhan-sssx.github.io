@@ -3,177 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>南京 - 复古翻页时钟</title>
+    <title>南京 - Fliqlo 时钟 (动态真随机星空版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 引入适合复古时钟的无衬线粗体 */
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
-        
         body {
-            /* 黑色基调的动态渐变背景 */
-            background: linear-gradient(-45deg, #000000, #121212, #050505, #1a1a1a);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background-color: #050505;
             color: #ffffff;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             margin: 0;
             overflow: hidden;
-        }
-
-        /* 背景渐变动画 */
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* 背景中心呼吸光晕 */
-        .glow-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60vw;
-            height: 60vw;
-            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 60%);
-            animation: pulse 6s infinite alternate ease-in-out;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
-            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-        }
-
-        /* 复古翻页卡片样式 */
-        .flip-card {
             position: relative;
-            background-color: #141414;
-            color: #e5e5e5;
-            font-family: 'Oswald', sans-serif;
-            border-radius: 12px;
-            box-shadow: 0 15px 25px rgba(0,0,0,0.8), inset 0 2px 2px rgba(255,255,255,0.05);
+        }
+
+        /* ---------------- 真随机星空基础样式 ---------------- */
+        .star {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+            /* 使用 CSS 变量接收 JS 传来的随机动画时间 */
+            animation: star-breathe var(--duration) infinite alternate ease-in-out;
+            animation-delay: var(--delay);
+            opacity: var(--base-opacity);
+            box-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes star-breathe {
+            0% { 
+                transform: scale(0.5); 
+                opacity: calc(var(--base-opacity) * 0.1); 
+                box-shadow: 0 0 0px rgba(255, 255, 255, 0);
+            }
+            100% { 
+                transform: scale(1.2); 
+                opacity: var(--base-opacity); 
+                box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+            }
+        }
+
+        /* 中心背景微弱光晕 */
+        .glow-overlay {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw; height: 80vw;
+            background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0) 60%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ---------------- Fliqlo 核心样式 ---------------- */
+        .fliqlo-group {
             display: flex;
-            justify-content: center;
             align-items: center;
-            width: 120px;
-            height: 160px;
-            font-size: 6rem;
-            font-weight: 700;
+            gap: 16px;
+            position: relative;
             z-index: 10;
         }
 
+        .flip-card {
+            position: relative;
+            width: 110px; height: 160px;
+            font-size: 100px; line-height: 1;
+            font-weight: 700; color: #d4d4d4;
+            background-color: #000;
+            border-radius: 12px;
+            perspective: 1000px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.1);
+        }
+
         @media (min-width: 768px) {
-            .flip-card { width: 160px; height: 200px; font-size: 8rem; }
+            .flip-card { width: 160px; height: 240px; font-size: 140px; }
+            .fliqlo-group { gap: 24px; }
         }
 
-        /* 翻页卡片中间的分割线 */
-        .flip-card::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: #000000;
-            box-shadow: 0 1px 1px rgba(255,255,255,0.1);
-            transform: translateY(-50%);
+        .card-half {
+            position: absolute; left: 0; width: 100%;
+            height: calc(50% - 1.5px);
+            background-color: #1a1a1a;
+            overflow: hidden; display: flex; justify-content: center;
         }
 
-        /* 卡片上半部分的暗角效果 */
-        .flip-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 50%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
+        .card-half.top { top: 0; transform-origin: bottom; border-radius: 10px 10px 0 0; }
+        .card-half.bottom { bottom: 0; transform-origin: top; border-radius: 0 0 10px 10px; }
+        .card-half span { position: absolute; left: 0; width: 100%; height: 200%; display: flex; justify-content: center; align-items: center; }
+        .card-half.top span { top: 0; }
+        .card-half.bottom span { bottom: 0; }
+
+        .card-half::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
+            opacity: 0.5; pointer-events: none;
         }
+        .card-half.bottom::after {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.6) 100%);
+        }
+
+        .flip-top { z-index: 2; animation: flipDownTop 0.4s ease-in forwards; }
+        .flip-bottom { z-index: 2; transform: rotateX(90deg); animation: flipDownBottom 0.4s ease-out 0.4s forwards; }
+
+        @keyframes flipDownTop { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(-90deg); } }
+        @keyframes flipDownBottom { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
+
     </style>
 </head>
 <body class="h-screen flex flex-col items-center justify-center selection:bg-gray-700">
 
+    <div id="stars-container" class="absolute inset-0 z-0 overflow-hidden pointer-events-none"></div>
     <div class="glow-overlay"></div>
 
-    <div class="z-10 flex flex-col items-center gap-12">
+    <div class="flex flex-col items-center gap-14 relative z-10 w-full px-4">
         
-        <div class="flex items-center gap-4 md:gap-6">
-            <div class="flip-card" id="hours">00</div>
-            <div class="text-4xl md:text-6xl font-bold text-gray-500 pb-4 animate-pulse">:</div>
-            <div class="flip-card" id="minutes">00</div>
-            <div class="text-4xl md:text-6xl font-bold text-gray-500 pb-4 animate-pulse">:</div>
-            <div class="flip-card" id="seconds">00</div>
+        <div class="fliqlo-group">
+            <div class="flip-card" id="hours"></div>
+            <div class="text-4xl md:text-7xl font-bold text-[#444] pb-6">:</div>
+            <div class="flip-card" id="minutes"></div>
+            <div class="text-4xl md:text-7xl font-bold text-[#444] pb-6">:</div>
+            <div class="flip-card" id="seconds"></div>
         </div>
 
-        <div class="flex flex-col items-center gap-2">
-            <div class="flex items-center gap-4 text-xl md:text-2xl text-gray-300 bg-[#111111] px-8 py-4 rounded-xl border border-gray-800 shadow-2xl tracking-widest">
-                <span class="text-gray-500 text-sm mr-2">📍 南京</span>
-                <span id="weather-desc" class="font-medium text-gray-200">加载中</span>
-                <span class="text-gray-700">|</span>
-                <span id="temperature" class="font-medium">-- °C</span>
+        <div class="flex flex-col items-center gap-3 mt-2">
+            <div class="flex items-center gap-4 text-lg md:text-xl text-gray-300 bg-[#0a0a0a] px-8 py-3 rounded-full border border-[#222] shadow-2xl tracking-wider backdrop-blur-sm">
+                <span class="text-gray-500 text-sm">📍 南京</span>
+                <span id="weather-desc" class="font-medium text-[#d4d4d4]">获取中</span>
+                <span class="text-gray-600">|</span>
+                <span id="temperature" class="font-medium text-[#d4d4d4]">-- °C</span>
             </div>
-            <div id="date" class="text-gray-500 text-sm tracking-widest mt-2">--</div>
+            <div id="date" class="text-gray-500 text-sm tracking-widest uppercase">--</div>
         </div>
 
     </div>
 
     <script>
-        // 1. 时钟更新逻辑
+        // ---------------- 0. 真随机星空生成引擎 ----------------
+        function initStars() {
+            const container = document.getElementById('stars-container');
+            // 随机生成 100 到 250 颗星星
+            const starCount = Math.floor(Math.random() * 151) + 100; 
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // 1. 随机位置 (0% 到 100%)
+                const x = Math.random() * 100; 
+                const y = Math.random() * 100; 
+                
+                // 2. 随机大小 (1px 到 3px)
+                const size = Math.random() * 2 + 1; 
+                
+                // 3. 随机动画时间与延迟 (产生不同步的闪烁感)
+                const duration = Math.random() * 4 + 2; // 呼吸一个周期需 2s 到 6s
+                const delay = Math.random() * 5; // 随机延迟，避免同时开始
+                
+                // 4. 随机基础透明度 (0.3 到 0.9)
+                const opacity = Math.random() * 0.6 + 0.3; 
+
+                // 应用属性
+                star.style.left = `${x}%`;
+                star.style.top = `${y}%`;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.setProperty('--duration', `${duration}s`);
+                star.style.setProperty('--delay', `-${delay}s`); // 使用负延迟，使页面一加载星星就已经在随机状态
+                star.style.setProperty('--base-opacity', opacity);
+                
+                container.appendChild(star);
+            }
+        }
+        // 页面加载时初始化星空
+        initStars();
+
+
+        // ---------------- 1. Fliqlo 翻页物理引擎 ----------------
+        function setFlipCard(elementId, value) {
+            const card = document.getElementById(elementId);
+            const currentValue = card.getAttribute('data-val');
+
+            if (currentValue === value) return;
+            card.setAttribute('data-val', value);
+
+            if (currentValue === null) {
+                card.innerHTML = `<div class="card-half top"><span>${value}</span></div><div class="card-half bottom"><span>${value}</span></div>`;
+                return;
+            }
+
+            const topStatic = document.createElement('div');
+            topStatic.className = 'card-half top'; topStatic.innerHTML = `<span>${value}</span>`;
+            const bottomStatic = document.createElement('div');
+            bottomStatic.className = 'card-half bottom'; bottomStatic.innerHTML = `<span>${currentValue}</span>`;
+            const flipTop = document.createElement('div');
+            flipTop.className = 'card-half top flip-top'; flipTop.innerHTML = `<span>${currentValue}</span>`;
+            const flipBottom = document.createElement('div');
+            flipBottom.className = 'card-half bottom flip-bottom'; flipBottom.innerHTML = `<span>${value}</span>`;
+
+            card.innerHTML = '';
+            card.append(topStatic, bottomStatic, flipTop, flipBottom);
+
+            setTimeout(() => {
+                if (card.getAttribute('data-val') === value) {
+                    card.innerHTML = `<div class="card-half top"><span>${value}</span></div><div class="card-half bottom"><span>${value}</span></div>`;
+                }
+            }, 850); 
+        }
+
+        // ---------------- 2. 时间驱动 ----------------
         function updateClock() {
             const now = new Date();
-            
-            document.getElementById('hours').textContent = String(now.getHours()).padStart(2, '0');
-            document.getElementById('minutes').textContent = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('seconds').textContent = String(now.getSeconds()).padStart(2, '0');
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+
+            setFlipCard('hours', h); setFlipCard('minutes', m); setFlipCard('seconds', s);
 
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
             document.getElementById('date').textContent = now.toLocaleDateString('zh-CN', options);
         }
-        
-        setInterval(updateClock, 1000);
-        updateClock();
+        setInterval(updateClock, 1000); updateClock();
 
-        // 2. 南京天气获取逻辑 (南京经纬度: 32.0603, 118.7969)
-        const lat = 32.0603;
-        const lon = 118.7969;
-        
+        // ---------------- 3. 南京天气 ----------------
+        const lat = 32.0603; const lon = 118.7969;
         async function fetchWeather() {
             try {
                 const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                 const data = await response.json();
-                
                 if (data.current_weather) {
                     const temp = data.current_weather.temperature;
-                    const weatherCode = data.current_weather.weathercode;
-                    
-                    // 将 WMO 气象代码转换为中文文字描述
+                    const code = data.current_weather.weathercode;
                     let desc = '未知';
-                    if (weatherCode === 0) desc = '晴朗'; 
-                    else if (weatherCode >= 1 && weatherCode <= 3) desc = '多云';
-                    else if (weatherCode === 45 || weatherCode === 48) desc = '雾';
-                    else if (weatherCode >= 51 && weatherCode <= 67) desc = '雨';
-                    else if (weatherCode >= 71 && weatherCode <= 77) desc = '雪';
-                    else if (weatherCode >= 80 && weatherCode <= 82) desc = '阵雨';
-                    else if (weatherCode >= 85 && weatherCode <= 86) desc = '阵雪';
-                    else if (weatherCode >= 95) desc = '雷暴';
+                    if (code === 0) desc = '晴朗'; else if (code >= 1 && code <= 3) desc = '多云';
+                    else if (code === 45 || code === 48) desc = '薄雾'; else if (code >= 51 && code <= 67) desc = '降雨';
+                    else if (code >= 71 && code <= 77) desc = '降雪'; else if (code >= 80 && code <= 82) desc = '阵雨';
+                    else if (code >= 85 && code <= 86) desc = '阵雪'; else if (code >= 95) desc = '雷暴';
                     
                     document.getElementById('temperature').textContent = `${temp} °C`;
                     document.getElementById('weather-desc').textContent = desc;
                 }
-            } catch (error) {
-                console.error('天气获取失败:', error);
-                document.getElementById('temperature').textContent = '离线';
-                document.getElementById('weather-desc').textContent = '获取失败';
-            }
+            } catch (error) { console.error('天气获取失败:', error); }
         }
-        
-        fetchWeather();
-        // 每 30 分钟刷新一次天气
-        setInterval(fetchWeather, 30 * 60 * 1000);
+        fetchWeather(); setInterval(fetchWeather, 30 * 60 * 1000);
     </script>
 </body>
 </html>
