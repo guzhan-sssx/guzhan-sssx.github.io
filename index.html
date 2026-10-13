@@ -1,221 +1,377 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>极简星空 - 翻页时钟</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background-color: #050505;
-            color: #ffffff;
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            margin: 0;
-            overflow: hidden;
-            position: relative;
-            /* 鼠标变成指针，暗示页面可点击 */
-            cursor: pointer; 
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工具箱 · 首页</title>
+<style>
+  :root {
+    --bg: #050505;
+    --card: rgba(18, 18, 22, 0.72);
+    --border: #232329;
+    --text: #e8e8ec;
+    --muted: #8b8b95;
+    --accent: #6ea8fe;
+    --accent-strong: #8bbcff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    position: relative;
+    overflow-x: hidden;
+  }
 
-        /* ---------------- 真随机星空基础样式 ---------------- */
-        .star {
-            position: absolute;
-            background-color: #ffffff;
-            border-radius: 50%;
-            animation: star-breathe var(--duration) infinite alternate ease-in-out;
-            animation-delay: var(--delay);
-            opacity: var(--base-opacity);
-            box-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
-        }
+  /* ---------------- 星空背景 ---------------- */
+  #stars-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .star {
+    position: absolute;
+    background-color: #fff;
+    border-radius: 50%;
+    animation: star-breathe var(--duration) infinite alternate ease-in-out;
+    animation-delay: var(--delay);
+    opacity: var(--base-opacity);
+    box-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+  }
+  @keyframes star-breathe {
+    0%   { transform: scale(0.5); opacity: calc(var(--base-opacity) * 0.1); }
+    100% { transform: scale(1.2); opacity: var(--base-opacity); box-shadow: 0 0 6px rgba(255, 255, 255, 0.8); }
+  }
+  .glow-overlay {
+    position: fixed;
+    top: -20vh; left: 50%;
+    transform: translateX(-50%);
+    width: 140vw; height: 90vh;
+    background: radial-gradient(ellipse at center, rgba(110, 168, 254, 0.10) 0%, rgba(5, 5, 5, 0) 65%);
+    z-index: 1;
+    pointer-events: none;
+  }
 
-        @keyframes star-breathe {
-            0% { transform: scale(0.5); opacity: calc(var(--base-opacity) * 0.1); box-shadow: 0 0 0px rgba(255, 255, 255, 0); }
-            100% { transform: scale(1.2); opacity: var(--base-opacity); box-shadow: 0 0 6px rgba(255, 255, 255, 0.8); }
-        }
+  /* ---------------- 布局 ---------------- */
+  .page {
+    position: relative;
+    z-index: 2;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 88px 24px 72px;
+  }
 
-        /* 中心背景微弱光晕 */
-        .glow-overlay {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100vw; height: 100vw;
-            background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%);
-            z-index: 2;
-            pointer-events: none;
-        }
+  header { margin-bottom: 56px; }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(16, 16, 20, 0.6);
+    backdrop-filter: blur(8px);
+  }
+  .brand .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  h1 {
+    margin: 22px 0 12px;
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  h1 .grad {
+    background: linear-gradient(100deg, #ffffff 10%, var(--accent-strong) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lede {
+    margin: 0;
+    max-width: 560px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.8;
+  }
 
-        /* ---------------- 时间显示容器 (含显隐过渡动画) ---------------- */
-        #time-container {
-            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* 隐藏时的状态：透明度为0，且轻微缩小 */
-        .time-hidden {
-            opacity: 0;
-            transform: scale(0.92);
-            pointer-events: none;
-        }
+  /* ---------------- 工具卡片 ---------------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+    gap: 20px;
+  }
+  .tool-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 26px 24px 24px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.28s ease,
+                box-shadow 0.28s ease,
+                background 0.28s ease;
+  }
+  .tool-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(340px circle at 12% 0%, rgba(110, 168, 254, 0.12), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+    pointer-events: none;
+  }
+  .tool-card:hover,
+  .tool-card:focus-visible {
+    transform: translateY(-5px);
+    border-color: rgba(110, 168, 254, 0.55);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(110, 168, 254, 0.12);
+    outline: none;
+  }
+  .tool-card:hover::after { opacity: 1; }
 
-        /* ---------------- Fliqlo 核心样式 (极致放大) ---------------- */
-        .fliqlo-group {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            position: relative;
-            z-index: 10;
-        }
+  .icon {
+    width: 46px; height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: linear-gradient(150deg, rgba(110, 168, 254, 0.20), rgba(110, 168, 254, 0.05));
+    border: 1px solid rgba(110, 168, 254, 0.28);
+    color: var(--accent-strong);
+    flex: none;
+  }
+  .icon svg { width: 22px; height: 22px; }
 
-        /* 移动端尺寸 */
-        .flip-card {
-            position: relative;
-            width: 160px; 
-            height: 240px;
-            font-size: 150px; 
-            line-height: 1;
-            font-weight: 700; color: #d4d4d4;
-            background-color: #000;
-            border-radius: 18px;
-            perspective: 1200px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.9), inset 0 2px 2px rgba(255,255,255,0.1);
-        }
+  .tool-name {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tool-desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--muted);
+  }
+  .tool-tag {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+  .arrow {
+    position: absolute;
+    top: 26px; right: 22px;
+    color: var(--muted);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.28s ease, transform 0.28s ease, color 0.28s ease;
+  }
+  .tool-card:hover .arrow { opacity: 1; transform: translateX(0); color: var(--accent-strong); }
+  .arrow svg { width: 16px; height: 16px; }
 
-        /* PC端极致放大尺寸 */
-        @media (min-width: 768px) {
-            .flip-card { 
-                width: 320px; 
-                height: 460px; 
-                font-size: 300px; 
-                border-radius: 24px;
-            }
-            .fliqlo-group { gap: 48px; }
-        }
+  /* 开发中的占位卡片 */
+  .tool-card.wip {
+    border-style: dashed;
+    background: rgba(14, 14, 18, 0.5);
+    cursor: default;
+  }
+  .tool-card.wip:hover { transform: none; border-color: var(--border); box-shadow: none; }
+  .tool-card.wip .icon {
+    background: rgba(120, 120, 132, 0.10);
+    border-color: var(--border);
+    color: var(--muted);
+  }
+  .badge-wip {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: #f5c26b;
+    border: 1px solid rgba(245, 194, 107, 0.35);
+    background: rgba(245, 194, 107, 0.08);
+    font-weight: 500;
+  }
 
-        .card-half {
-            position: absolute; left: 0; width: 100%;
-            height: calc(50% - 2.5px); /* 放大后的物理缝隙 */
-            background-color: #1a1a1a;
-            overflow: hidden; display: flex; justify-content: center;
-        }
+  footer {
+    margin-top: 64px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent; transition: 0.2s; }
+  footer a:hover { color: var(--accent-strong); border-bottom-color: rgba(110, 168, 254, 0.5); }
 
-        .card-half.top { top: 0; transform-origin: bottom; border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-        .card-half.bottom { bottom: 0; transform-origin: top; border-radius: inherit; border-top-left-radius: 0; border-top-right-radius: 0; }
-        .card-half span { position: absolute; left: 0; width: 100%; height: 200%; display: flex; justify-content: center; align-items: center; }
-        .card-half.top span { top: 0; }
-        .card-half.bottom span { bottom: 0; }
-
-        .card-half::after {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
-            opacity: 0.5; pointer-events: none;
-        }
-        .card-half.bottom::after {
-            background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.6) 100%);
-        }
-
-        .flip-top { z-index: 2; animation: flipDownTop 0.5s ease-in forwards; }
-        .flip-bottom { z-index: 2; transform: rotateX(90deg); animation: flipDownBottom 0.5s ease-out 0.5s forwards; }
-
-        @keyframes flipDownTop { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(-90deg); } }
-        @keyframes flipDownBottom { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
-
-    </style>
+  @media (max-width: 600px) {
+    .page { padding: 56px 18px 48px; }
+    header { margin-bottom: 36px; }
+  }
+</style>
 </head>
-<body class="h-screen flex items-center justify-center selection:bg-transparent">
+<body>
 
-    <div id="stars-container" class="absolute inset-0 z-0 overflow-hidden pointer-events-none"></div>
-    <div class="glow-overlay"></div>
+<div id="stars-container"></div>
+<div class="glow-overlay"></div>
 
-    <div id="time-container" class="relative z-10">
-        <div class="fliqlo-group">
-            <div class="flip-card" id="hours"></div>
-            <div class="text-[5rem] md:text-[10rem] font-bold text-[#444] pb-8 md:pb-16">:</div>
-            <div class="flip-card" id="minutes"></div>
+<div class="page">
+  <header>
+    <span class="brand"><span class="dot"></span>Toolbox</span>
+    <h1>极简<span class="grad">工具集</span></h1>
+    <p class="lede">收录日常使用的小工具，无需安装、无需登录，点击卡片即可进入。新工具会持续加入。</p>
+  </header>
+
+  <!-- 工具列表由下方脚本渲染，新增工具只需在 TOOLS 数组里加一项 -->
+  <main class="grid" id="tools-grid"></main>
+
+  <footer>
+    <span>共 <span id="tool-count">0</span> 个工具</span>
+    <span>纯前端实现 · 数据不上传</span>
+  </footer>
+</div>
+
+<script>
+  /* =========================================================
+   * 新增工具：只要在下面的数组里加一项即可
+   * ---------------------------------------------------------
+   * {
+   *   name:  "工具名称",
+   *   desc:  "一句话说明",
+   *   href:  "工具页面.html",     // 工具文件放在 index.html 同级目录
+   *   tag:   "分类标签",           // 可选
+   *   icon:  "clock" | "bin" | "file" | "tool", // 可选，图标样式
+   *   wip:   true                 // 可选，写成 true 表示「开发中」，不可点击
+   * }
+   * ========================================================= */
+  const TOOLS = [
+    {
+      name: "翻页时钟",
+      desc: "全屏极简星空翻页时钟，点击屏幕可隐藏时间，适合做桌面摆件。",
+      href: "clock.html",
+      tag: "展示",
+      icon: "clock"
+    },
+    {
+      name: "离线烧写器BIN文件处理",
+      desc: "在线修改固件镜像的文件头字段，支持拖拽上传与校验，全程本地处理。",
+      href: "changebin.html",
+      tag: "开发",
+      icon: "bin"
+    },
+    {
+      name: "更多工具",
+      desc: "后续添加的工具会出现在这里，占位卡片可直接替换为新工具。",
+      icon: "tool",
+      wip: true
+    }
+  ];
+
+  /* ---------------- 图标库 ---------------- */
+  const ICONS = {
+    clock: '<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>',
+    bin:   '<path d="M4 5h16"></path><path d="M9 5V3h6v2"></path><rect x="5" y="5" width="14" height="16" rx="2"></rect><path d="M9 10v7M15 10v7"></path>',
+    file:  '<path d="M14 3v6h6"></path><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"></path>',
+    tool:  '<path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle>'
+  };
+
+  function iconSvg(key) {
+    const inner = ICONS[key] || ICONS.tool;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  }
+
+  // 转义，避免内容里的特殊字符破坏结构
+  function esc(str) {
+    return String(str).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function renderTools() {
+    const grid = document.getElementById('tools-grid');
+    grid.innerHTML = TOOLS.map(tool => {
+      const inner = `
+        <span class="icon">${iconSvg(tool.icon)}</span>
+        <div>
+          <h2 class="tool-name">
+            ${esc(tool.name)}
+            ${tool.wip ? '<span class="badge-wip">开发中</span>' : ''}
+          </h2>
+          <p class="tool-desc">${esc(tool.desc)}</p>
+          ${tool.tag ? `<span class="tool-tag">${esc(tool.tag)}</span>` : ''}
         </div>
-    </div>
+        ${tool.wip ? '' : `<span class="arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        </span>`}
+      `;
 
-    <script>
-        // ---------------- 0. 点击隐藏/显示逻辑 ----------------
-        document.body.addEventListener('click', () => {
-            const timeContainer = document.getElementById('time-container');
-            // 切换隐藏状态的 CSS 类名
-            timeContainer.classList.toggle('time-hidden');
-        });
+      if (tool.wip) {
+        return `<div class="tool-card wip" aria-disabled="true">${inner}</div>`;
+      }
+      return `<a class="tool-card" href="${esc(tool.href)}">${inner}</a>`;
+    }).join('');
 
-        // ---------------- 1. 真随机星空生成引擎 ----------------
-        function initStars() {
-            const container = document.getElementById('stars-container');
-            const starCount = Math.floor(Math.random() * 151) + 150; // 增加了星星的基础数量
+    document.getElementById('tool-count').textContent = TOOLS.filter(t => !t.wip).length;
+  }
 
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                
-                const x = Math.random() * 100; 
-                const y = Math.random() * 100; 
-                const size = Math.random() * 2 + 1; 
-                const duration = Math.random() * 4 + 2;
-                const delay = Math.random() * 5;
-                const opacity = Math.random() * 0.6 + 0.3; 
+  /* ---------------- 星空背景 ---------------- */
+  function initStars() {
+    const container = document.getElementById('stars-container');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-                star.style.left = `${x}%`;
-                star.style.top = `${y}%`;
-                star.style.width = `${size}px`;
-                star.style.height = `${size}px`;
-                star.style.setProperty('--duration', `${duration}s`);
-                star.style.setProperty('--delay', `-${delay}s`);
-                star.style.setProperty('--base-opacity', opacity);
-                
-                container.appendChild(star);
-            }
-        }
-        initStars();
+    const starCount = Math.floor(Math.random() * 91) + 90;
+    const frag = document.createDocumentFragment();
 
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      const size = Math.random() * 2 + 1;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.setProperty('--duration', `${Math.random() * 4 + 2}s`);
+      star.style.setProperty('--delay', `-${Math.random() * 5}s`);
+      star.style.setProperty('--base-opacity', Math.random() * 0.6 + 0.3);
+      frag.appendChild(star);
+    }
+    container.appendChild(frag);
+  }
 
-        // ---------------- 2. Fliqlo 翻页物理引擎 ----------------
-        function setFlipCard(elementId, value) {
-            const card = document.getElementById(elementId);
-            const currentValue = card.getAttribute('data-val');
-
-            if (currentValue === value) return;
-            card.setAttribute('data-val', value);
-
-            if (currentValue === null) {
-                card.innerHTML = `<div class="card-half top"><span>${value}</span></div><div class="card-half bottom"><span>${value}</span></div>`;
-                return;
-            }
-
-            const topStatic = document.createElement('div');
-            topStatic.className = 'card-half top'; topStatic.innerHTML = `<span>${value}</span>`;
-            const bottomStatic = document.createElement('div');
-            bottomStatic.className = 'card-half bottom'; bottomStatic.innerHTML = `<span>${currentValue}</span>`;
-            const flipTop = document.createElement('div');
-            flipTop.className = 'card-half top flip-top'; flipTop.innerHTML = `<span>${currentValue}</span>`;
-            const flipBottom = document.createElement('div');
-            flipBottom.className = 'card-half bottom flip-bottom'; flipBottom.innerHTML = `<span>${value}</span>`;
-
-            card.innerHTML = '';
-            card.append(topStatic, bottomStatic, flipTop, flipBottom);
-
-            setTimeout(() => {
-                if (card.getAttribute('data-val') === value) {
-                    card.innerHTML = `<div class="card-half top"><span>${value}</span></div><div class="card-half bottom"><span>${value}</span></div>`;
-                }
-            }, 1050); 
-        }
-
-        // ---------------- 3. 时间驱动 ----------------
-        function updateClock() {
-            const now = new Date();
-            const h = String(now.getHours()).padStart(2, '0');
-            const m = String(now.getMinutes()).padStart(2, '0');
-            
-            // 仅更新时和分
-            setFlipCard('hours', h); 
-            setFlipCard('minutes', m); 
-        }
-        
-        setInterval(updateClock, 1000); 
-        updateClock();
-
-    </script>
+  renderTools();
+  initStars();
+</script>
 </body>
 </html>

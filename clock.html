@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简星空 - 翻页时钟</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+            /* 鼠标变成指针，暗示页面可点击 */
+            cursor: pointer; 
+        }
+
+        /* ---------------- 真随机星空基础样式 ---------------- */
+        .star {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+            animation: star-breathe var(--duration) infinite alternate ease-in-out;
+            animation-delay: var(--delay);
+            opacity: var(--base-opacity);
+            box-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes star-breathe {
+            0% { transform: scale(0.5); opacity: calc(var(--base-opacity) * 0.1); box-shadow: 0 0 0px rgba(255, 255, 255, 0); }
+            100% { transform: scale(1.2); opacity: var(--base-opacity); box-shadow: 0 0 6px rgba(255, 255, 255, 0.8); }
+        }
+
+        /* 中心背景微弱光晕 */
+        .glow-overlay {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw; height: 100vw;
+            background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ---------------- 时间显示容器 (含显隐过渡动画) ---------------- */
+        #time-container {
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 隐藏时的状态：透明度为0，且轻微缩小 */
+        .time-hidden {
+            opacity: 0;
+            transform: scale(0.92);
+            pointer-events: none;
+        }
+
+        /* ---------------- Fliqlo 核心样式 (极致放大) ---------------- */
+        .fliqlo-group {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 移动端尺寸 */
+        .flip-card {
+            position: relative;
+            width: 160px; 
+            height: 240px;
+            font-size: 150px; 
+            line-height: 1;
+            font-weight: 700; color: #d4d4d4;
+            background-color: #000;
+            border-radius: 18px;
+            perspective: 1200px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9), inset 0 2px 2px rgba(255,255,255,0.1);
+        }
+
+        /* PC端极致放大尺寸 */
+        @media (min-width: 768px) {
+            .flip-card { 
+                width: 320px; 
+                height: 460px; 
+                font-size: 300px; 
+                border-radius: 24px;
+            }
+            .fliqlo-group { gap: 48px; }
+        }
+
+        .card-half {
+            position: absolute; left: 0; width: 100%;
+            height: calc(50% - 2.5px); /* 放大后的物理缝隙 */
+            background-color: #1a1a1a;
+            overflow: hidden; display: flex; justify-content: center;
+        }
+
+        .card-half.top { top: 0; transform-origin: bottom; border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .card-half.bottom { bottom: 0; transform-origin: top; border-radius: inherit; border-top-left-radius: 0; border-top-right-radius: 0; }
+        .card-half span { position: absolute; left: 0; width: 100%; height: 200%; display: flex; justify-content: center; align-items: center; }
+        .card-half.top span { top: 0; }
+        .card-half.bottom span { bottom: 0; }
+
+        .card-half::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%);
+            opacity: 0.5; pointer-events: none;
+        }
+        .card-half.bottom::after {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.6) 100%);
+        }
+
+        .flip-top { z-index: 2; animation: flipDownTop 0.5s ease-in forwards; }
+        .flip-bottom { z-index: 2; transform: rotateX(90deg); animation: flipDownBottom 0.5s ease-out 0.5s forwards; }
+
+        @keyframes flipDownTop { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(-90deg); } }
+        @keyframes flipDownBottom { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg); } }
+
+        /* ---------------- 返回首页入口 (默认隐藏，鼠标移入淡入) ---------------- */
+        #back-home {
+            position: fixed;
+            top: 24px; left: 24px;
+            z-index: 20;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(30, 30, 36, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cfcfd6;
+            font-size: 13px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        body:hover #back-home { opacity: 1; }
+        #back-home:hover { border-color: rgba(110, 168, 254, 0.6); color: #8bbcff; }
+    </style>
+</head>
+<body class="h-screen flex items-center justify-center selection:bg-transparent">
+
+    <a id="back-home" href="./index.html" onclick="event.stopPropagation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        返回首页
+    </a>
+
+    <div id="stars-container" class="absolute inset-0 z-0 overflow-hidden pointer-events-none"></div>
+    <div class="glow-overlay"></div>
+
+    <div id="time-container" class="relative z-10">
+        <div class="fliqlo-group">
+            <div class="flip-card" id="hours"></div>
+            <div class="text-[5rem] md:text-[10rem] font-bold text-[#444] pb-8 md:pb-16">:</div>
+            <div class="flip-card" id="minutes"></div>
+        </div>
+    </div>
+
+    <script>
+        // ---------------- 0. 点击隐藏/显示逻辑 ----------------
+        document.body.addEventListener('click', () => {
+            const timeContainer = document.getElementById('time-container');
+            // 切换隐藏状态的 CSS 类名
+            timeContainer.classList.toggle('time-hidden');
+        });
+
+        // ---------------- 1. 真随机星空生成引擎 ----------------
+        function initStars() {
+            const container = document.getElementById('stars-container');
+            const starCount = Math.floor(Math.random() * 151) + 150; // 增加了星星的基础数量
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                const x = Math.random() * 100; 
+                const y = Math.random() * 100; 
+                const size = Math.random() * 2 + 1; 
+                const duration = Math.random() * 4 + 2;
+                const delay = Math.random() * 5;
+                const opacity = Math.random() * 0.6 + 0.3; 
+
+                star.style.left = `${x}%`;
+                star.style.top = `${y}%`;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.setProperty('--duration', `${duration}s`);
+                star.style.setProperty('--delay', `-${delay}s`);
+                star.style.setProperty('--base-opacity', opacity);
+                
+                container.appendChild(star);
+            }
+        }
+        initStars();
+
+
+        // ---------------- 2. Fliqlo 翻页物理引擎 ----------------
+        function setFlipCard(elementId, value) {
+            const card = document.getElementById(elementId);
+            const currentValue = card.getAttribute('data-val');
+
+            if (currentValue === value) return;
+            card.setAttribute('data-val', value);
+
+            if (currentValue === null) {
+                card.innerHTML = `<div class="card-half top"><span>${value}</span></div><div class="card-half bottom"><span>${value}</span></div>`;
+                return;
+            }
+
+            const topStatic = document.createElement('div');
+            topStatic.className = 'card-half top'; topStatic.innerHTML = `<span>${value}</span>`;
+            const bottomStatic = document.createElement('div');
+            bottomStatic.className = 'card-half bottom'; bottomStatic.innerHTML = `<span>${currentValue}</span>`;
+            const flipTop = document.createElement('div');
+            flipTop.className = 'card-half top flip-top'; flipTop.innerHTML = `<span>${currentValue}</span>`;
+            const flipBottom = document.createElement('div');
+            flipBottom.className = 'card-half bottom flip-bottom'; flipBottom.innerHTML = `<span>${value}</span>`;
+
+            card.innerHTML = '';
+            card.append(topStatic, bottomStatic, flipTop, flipBottom);
+
+            setTimeout(() => {
+                if (card.getAttribute('data-val') === value) {
+                    card.innerHTML = `<div class="card-half top"><span>${value}</span></div><div class="card-half bottom"><span>${value}</span></div>`;
+                }
+            }, 1050); 
+        }
+
+        // ---------------- 3. 时间驱动 ----------------
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            
+            // 仅更新时和分
+            setFlipCard('hours', h); 
+            setFlipCard('minutes', m); 
+        }
+        
+        setInterval(updateClock, 1000); 
+        updateClock();
+
+    </script>
+</body>
+</html>

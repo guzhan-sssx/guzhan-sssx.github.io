@@ -98,6 +98,13 @@ def process_file(file_path):
 
     messagebox.showinfo("成功", f"文件已处理并保存为: {new_file_path}")
 
+def update_baud_options():
+    """根据通讯方式限制可选波特率：CAN -> 250/500 Kbps，UART -> 9600/57600 bps"""
+    values = ['250 Kbps', '500 Kbps'] if comm_var.get() == "CAN" else ['9600 bps', '57600 bps']
+    baud_combobox['values'] = values
+    if baud_var.get() not in values:
+        baud_var.set(values[0])
+
 # 创建主窗口
 root = tk.Tk()
 root.title("BIN 文件处理程序")
@@ -108,20 +115,20 @@ comm_var = tk.StringVar(value="CAN")
 comm_label = tk.Label(root, text="选择通讯方式:")
 comm_label.pack()
 
-comm_can = tk.Radiobutton(root, text="CAN", variable=comm_var, value="CAN")
+comm_can = tk.Radiobutton(root, text="CAN", variable=comm_var, value="CAN", command=update_baud_options)
 comm_can.pack()
 
-comm_uart = tk.Radiobutton(root, text="UART", variable=comm_var, value="UART")
+comm_uart = tk.Radiobutton(root, text="UART", variable=comm_var, value="UART", command=update_baud_options)
 comm_uart.pack()
 
-# 用户选择波特率
+# 用户选择波特率（选项随通讯方式联动）
 baud_var = tk.StringVar(value="250 Kbps")
 baud_label = tk.Label(root, text="选择波特率:")
 baud_label.pack()
 
 baud_combobox = ttk.Combobox(root, textvariable=baud_var)
-baud_combobox['values'] = ['250 Kbps', '500 Kbps', '9600 bps', '57600 bps']
 baud_combobox.pack()
+update_baud_options()
 
 # 用户擦写种类选择
 erase_var = tk.StringVar(value="1")
