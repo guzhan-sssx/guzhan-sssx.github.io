@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIN 文件头处理工具</title>
+<style>
+  :root {
+    --bg: #050505;
+    --card: #101014;
+    --border: #232329;
+    --text: #e8e8ec;
+    --muted: #8b8b95;
+    --accent: #6ea8fe;
+    --accent-strong: #8bbcff;
+    --error: #ff6b6b;
+    --ok: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 580px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+  }
+  h1 { font-size: 22px; margin: 0 0 8px; font-weight: 600; }
+  .subtitle { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0 0 28px; }
+  .subtitle code { color: var(--accent); font-size: 12px; }
+
+  /* 文件选择区 */
+  .dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    padding: 30px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    margin-bottom: 24px;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(110, 168, 254, 0.06);
+  }
+  .dropzone svg { width: 34px; height: 34px; stroke: var(--muted); margin-bottom: 10px; }
+  .dropzone:hover svg, .dropzone.dragover svg { stroke: var(--accent); }
+  .dz-text { font-size: 14px; }
+  .dz-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .file-name { font-size: 14px; color: var(--accent); word-break: break-all; }
+  .file-size { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* 表单 */
+  .row { margin-bottom: 18px; }
+  .row > label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  select, input[type="text"] {
+    width: 100%;
+    background: #16161c;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--accent); }
+  .radio-group { display: flex; gap: 12px; }
+  .radio-group label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--muted);
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  .radio-group label:hover { border-color: #3a3a44; }
+  .radio-group input { display: none; }
+  .radio-group input:checked + span { color: var(--text); }
+  .radio-group label:has(input:checked) {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(110, 168, 254, 0.08);
+  }
+
+  /* 按钮与消息 */
+  .btn {
+    width: 100%;
+    padding: 13px 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #050505;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+    margin-top: 4px;
+  }
+  .btn:hover { background: var(--accent-strong); }
+  .btn:disabled { background: #2a2a32; color: var(--muted); cursor: not-allowed; }
+  .msg {
+    display: none;
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .msg.show { display: block; }
+  .msg.error { background: rgba(255, 107, 107, 0.1); color: var(--error); border: 1px solid rgba(255, 107, 107, 0.3); }
+  .msg.ok { background: rgba(74, 222, 128, 0.08); color: var(--ok); border: 1px solid rgba(74, 222, 128, 0.25); }
+  pre.hex {
+    margin: 10px 0 0;
+    padding: 12px;
+    background: #0a0a0e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--muted);
+    overflow-x: auto;
+  }
+  .hex-title { font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .back { display: inline-block; margin-top: 24px; font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>BIN 文件头处理工具</h1>
+  <p class="subtitle">
+    为 BIN 文件添加 1024 字节配置头（含 <code>CRC16-CCITT/FALSE</code> 校验），
+    全部处理均在浏览器本地完成，文件不会上传到任何服务器。
+  </p>
+
+  <div class="dropzone" id="dropzone">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="dz-text" id="dzText">点击选择或拖入 BIN 文件</div>
+    <div class="dz-hint">仅支持 .bin 文件</div>
+  </div>
+  <input type="file" id="fileInput" accept=".bin" hidden>
+
+  <div class="row">
+    <label>选择通讯方式:</label>
+    <div class="radio-group">
+      <label><input type="radio" name="comm" value="CAN" checked><span>CAN</span></label>
+      <label><input type="radio" name="comm" value="UART"><span>UART</span></label>
+    </div>
+  </div>
+
+  <div class="row">
+    <label for="baud">选择波特率:</label>
+    <select id="baud">
+      <option value="250">250 Kbps</option>
+      <option value="500">500 Kbps</option>
+      <option value="9600">9600 bps</option>
+      <option value="57600">57600 bps</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="erase">选择擦写次数:</label>
+    <select id="erase">
+      <option value="1" selected>1</option>
+      <option value="20">20</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="device">选择烧写设备:</label>
+    <select id="device">
+      <option value="0" selected>仪表</option>
+      <option value="1">控制器</option>
+      <option value="2">烧录器</option>
+      <option value="3">ESP32</option>
+      <option value="4">ESP32_POLINI</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="version">版本号:</label>
+    <input type="text" id="version" placeholder="例如 V1.0.0（仅支持 ASCII 字符）">
+  </div>
+
+  <button class="btn" id="processBtn">处理并下载</button>
+
+  <div class="msg" id="msg"></div>
+
+  <a class="back" href="/">&larr; 返回首页</a>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const dropzone = $('dropzone');
+  const fileInput = $('fileInput');
+  const dzText = $('dzText');
+  const msg = $('msg');
+  let selectedFile = null;
+
+  /* ---------- 文件选择 ---------- */
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) setFile(fileInput.files[0]);
+  });
+  ['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+  }));
+  dropzone.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+  });
+
+  function setFile(file) {
+    if (!/\.bin$/i.test(file.name)) {
+      showMsg('error', '请选择 .bin 文件');
+      return;
+    }
+    selectedFile = file;
+    dzText.textContent = file.name;
+    dzText.className = 'file-name';
+    dropzone.querySelector('.dz-hint').textContent = formatSize(file.size);
+    hideMsg();
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  /* ---------- CRC16 (poly 0x1021, init 0xFFFF)，与 Python 版一致 ---------- */
+  function crc16(data) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < data.length; i++) {
+      let cur = (data[i] << 8) & 0xFFFF;
+      for (let j = 0; j < 8; j++) {
+        if ((crc ^ cur) & 0x8000) {
+          crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+        } else {
+          crc = (crc << 1) & 0xFFFF;
+        }
+        cur = (cur << 1) & 0xFFFF;
+      }
+    }
+    return crc & 0xFFFF;
+  }
+
+  /* ---------- 构建 1024 字节头部，布局与 ChangeBin.py 完全一致 ---------- */
+  function buildHeader(opts) {
+    const header = new Uint8Array(1024);
+    const writeU32BE = (offset, value) => {
+      header[offset]     = (value >>> 24) & 0xFF;
+      header[offset + 1] = (value >>> 16) & 0xFF;
+      header[offset + 2] = (value >>> 8) & 0xFF;
+      header[offset + 3] = value & 0xFF;
+    };
+
+    header[0] = 0x0D;
+    header[1] = 0x0A;
+    header[2] = opts.comm === 'CAN' ? 0x00 : 0x01;   // 通讯方式
+    writeU32BE(3, opts.baud);                        // 波特率
+    // 偏移 7~12：日期字段，与原脚本一致留空
+    writeU32BE(13, opts.erase);                      // 擦写次数
+    writeU32BE(17, opts.device);                     // 烧写设备
+
+    const versionBytes = [];
+    for (const ch of opts.version) {
+      const code = ch.charCodeAt(0);
+      if (code > 127) throw new Error('版本号只能包含 ASCII 字符（字母、数字、常见符号）');
+      versionBytes.push(code);
+    }
+    if (21 + versionBytes.length > 1022) throw new Error('版本号过长，请缩短后重试');
+    versionBytes.forEach((b, i) => { header[21 + i] = b; });
+
+    // 填充到 1022 字节后计算 CRC，低字节在前、高字节在后
+    const crc = crc16(header.subarray(0, 1022));
+    header[1022] = crc & 0xFF;
+    header[1023] = (crc >> 8) & 0xFF;
+    return { header, crc };
+  }
+
+  /* ---------- 处理并下载 ---------- */
+  $('processBtn').addEventListener('click', () => {
+    hideMsg();
+    if (!selectedFile) {
+      showMsg('error', '请先选择一个 BIN 文件');
+      return;
+    }
+
+    const opts = {
+      comm: document.querySelector('input[name="comm"]:checked').value,
+      baud: parseInt($('baud').value, 10),
+      erase: parseInt($('erase').value, 10),
+      device: parseInt($('device').value, 10),
+      version: $('version').value.trim()
+    };
+
+    let result;
+    try {
+      result = buildHeader(opts);
+    } catch (e) {
+      showMsg('error', e.message);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const original = new Uint8Array(reader.result);
+      const out = new Uint8Array(1024 + original.length);
+      out.set(result.header, 0);
+      out.set(original, 1024);
+
+      const blob = new Blob([out], { type: 'application/octet-stream' });
+      const a = document.createElement('a');
+      const baseName = selectedFile.name.replace(/\.bin$/i, '');
+      const outName = baseName + '_modified.bin';
+      a.href = URL.createObjectURL(blob);
+      a.download = outName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+
+      const crcHex = '0x' + result.crc.toString(16).toUpperCase().padStart(4, '0');
+      showMsg('ok',
+        '文件已生成: ' + outName + '\n' +
+        '总大小: ' + formatSize(out.length) + '（1024 字节头部 + 原始 ' + formatSize(original.length) + '）\n' +
+        'CRC16: ' + crcHex + '（位于偏移 1022~1023）'
+      );
+      appendHexPreview(result.header, crcHex);
+    };
+    reader.onerror = () => showMsg('error', '文件读取失败，请重试');
+    reader.readAsArrayBuffer(selectedFile);
+  });
+
+  /* ---------- 消息与十六进制预览 ---------- */
+  function showMsg(type, text) {
+    msg.className = 'msg show ' + type;
+    msg.textContent = text;
+  }
+  function hideMsg() {
+    msg.className = 'msg';
+    msg.textContent = '';
+    document.querySelectorAll('pre.hex').forEach(el => el.remove());
+  }
+
+  function appendHexPreview(header, crcHex) {
+    const fmt = bytes => {
+      const lines = [];
+      for (let i = 0; i < bytes.length; i += 16) {
+        const chunk = Array.from(bytes.slice(i, i + 16))
+          .map(b => b.toString(16).padStart(2, '0')).join(' ');
+        lines.push(i.toString(16).padStart(4, '0') + '  ' + chunk);
+      }
+      return lines.join('\n');
+    };
+
+    const t1 = document.createElement('div');
+    t1.className = 'hex-title';
+    t1.textContent = '头部起始 32 字节:';
+    const p1 = document.createElement('pre');
+    p1.className = 'hex';
+    p1.textContent = fmt(header.slice(0, 32));
+
+    const t2 = document.createElement('div');
+    t2.className = 'hex-title';
+    t2.textContent = '头部末尾 4 字节（最后 2 字节为 CRC，' + crcHex + '）:';
+    const p2 = document.createElement('pre');
+    p2.className = 'hex';
+    p2.textContent = fmt(header.slice(1020, 1024));
+
+    msg.after(t1, p1, t2, p2);
+  }
+</script>
+</body>
+</html>
