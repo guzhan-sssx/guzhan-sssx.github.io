@@ -326,8 +326,9 @@
       else if (opts.baud === 57600) pushU32BE(57600);
     }
 
-    // 日期字段：与原脚本一致留空（年/月/日/时/分/秒）
-    for (let i = 0; i < 6; i++) data.push(0);
+    // 日期字段：与原脚本一致留空，共 7 字节（年高位、年低位、月、日、时、分、秒）
+    // 注意必须是 7 字节：ChangeBin.py 将年高位/年低位分开 append，写 6 字节会导致后续字段整体错位
+    for (let i = 0; i < 7; i++) data.push(0);
 
     // 擦写次数
     if (opts.erase === 1) pushU32BE(1);
