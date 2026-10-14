@@ -270,7 +270,7 @@
    *   desc:  "一句话说明",
    *   href:  "工具页面.html",     // 工具文件放在 index.html 同级目录
    *   tag:   "分类标签",           // 可选
-   *   icon:  "clock" | "bin" | "file" | "tool", // 可选，图标样式
+   *   icon:  "clock" | "bin" | "file" | "chip" | "tool", // 可选，图标样式
    *   wip:   true                 // 可选，写成 true 表示「开发中」，不可点击
    * }
    * ========================================================= */
@@ -290,6 +290,13 @@
       icon: "bin"
     },
     {
+      name: "ESP32固件重命名（SHA-256）",
+      desc: "读取 app_desc 版本号、编译时间与 elf_sha256，按命名规则生成固件与 .json 清单。",
+      href: "firmware_renamer_sha256.html",
+      tag: "开发",
+      icon: "chip"
+    },
+    {
       name: "更多工具",
       desc: "后续添加的工具会出现在这里，占位卡片可直接替换为新工具。",
       icon: "tool",
@@ -302,6 +309,7 @@
     clock: '<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>',
     bin:   '<path d="M4 5h16"></path><path d="M9 5V3h6v2"></path><rect x="5" y="5" width="14" height="16" rx="2"></rect><path d="M9 10v7M15 10v7"></path>',
     file:  '<path d="M14 3v6h6"></path><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"></path>',
+    chip:  '<rect x="7" y="7" width="10" height="10" rx="2"></rect><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"></path>',
     tool:  '<path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle>'
   };
 

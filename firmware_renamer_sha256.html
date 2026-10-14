@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>固件重命名（SHA-256 指纹）</title>
+<style>
+  :root {
+    --bg: #050505;
+    --card: #101014;
+    --border: #232329;
+    --text: #e8e8ec;
+    --muted: #8b8b95;
+    --accent: #6ea8fe;
+    --accent-strong: #8bbcff;
+    --error: #ff6b6b;
+    --ok: #4ade80;
+    --warn: #f5c26b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 720px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+  }
+  h1 { font-size: 22px; margin: 0 0 8px; font-weight: 600; }
+  .subtitle { color: var(--muted); font-size: 13px; line-height: 1.8; margin: 0 0 24px; }
+  .subtitle code { color: var(--accent); font-size: 12px; word-break: break-all; }
+
+  /* 文件选择区 */
+  .dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    padding: 26px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    margin-bottom: 20px;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(110, 168, 254, 0.06);
+  }
+  .dropzone svg { width: 34px; height: 34px; stroke: var(--muted); margin-bottom: 10px; }
+  .dropzone:hover svg, .dropzone.dragover svg { stroke: var(--accent); }
+  .dz-text { font-size: 14px; }
+  .dz-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .dz-hint a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--border); }
+  .dz-hint a:hover { color: var(--accent-strong); border-bottom-color: rgba(110, 168, 254, 0.5); }
+  .file-name { font-size: 14px; color: var(--accent); word-break: break-all; }
+  .file-size { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* 面板 */
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+    background: #0b0b0f;
+  }
+  .panel-title { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: .02em; }
+
+  /* 信息行 */
+  .info-row { display: flex; gap: 12px; padding: 7px 0; font-size: 13px; border-bottom: 1px solid rgba(35, 35, 41, 0.6); }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { flex: none; width: 96px; color: var(--muted); }
+  .info-val { flex: 1; min-width: 0; word-break: break-all; line-height: 1.6; }
+  .info-val.mono { font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  .info-val.empty { color: var(--muted); }
+  .info-val.warn { color: var(--warn); }
+  .info-val.err { color: var(--error); }
+  .info-val.ok { color: var(--ok); }
+
+  /* 表单 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .field > label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 7px; }
+  select, input[type="text"] {
+    width: 100%;
+    background: #16161c;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+  .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+  .radio-group label {
+    flex: 1 1 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--muted);
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  .radio-group label:hover { border-color: #3a3a44; }
+  .radio-group input { display: none; }
+  .radio-group input:checked + span { color: var(--text); }
+  .radio-group label:has(input:checked) {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(110, 168, 254, 0.08);
+  }
+  .check-row { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text); margin-top: 14px; cursor: pointer; }
+  .check-row input { width: 15px; height: 15px; accent-color: var(--accent); }
+
+  /* 预览 */
+  .preview-box {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #0a0a0e;
+    border: 1px solid var(--border);
+  }
+  .preview-label { font-size: 11px; color: var(--muted); letter-spacing: .06em; margin-bottom: 6px; }
+  .preview-name { font-size: 13px; color: var(--ok); word-break: break-all; font-family: Consolas, "Courier New", monospace; line-height: 1.7; }
+
+  /* 按钮与消息 */
+  .btn-row { display: flex; gap: 12px; margin-top: 4px; }
+  .btn {
+    flex: 1;
+    padding: 13px 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #050505;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .btn:hover { background: var(--accent-strong); }
+  .btn:disabled { background: #2a2a32; color: var(--muted); cursor: not-allowed; }
+  .btn.ghost {
+    flex: none;
+    padding: 13px 18px;
+    background: #16161c;
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .btn.ghost:hover { background: #1c1c24; border-color: #3a3a44; }
+  .btn.ghost:disabled { background: #14141a; color: #4a4a52; border-color: var(--border); }
+
+  .msg {
+    display: none;
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .msg.show { display: block; }
+  .msg.error { background: rgba(255, 107, 107, 0.1); color: var(--error); border: 1px solid rgba(255, 107, 107, 0.3); }
+  .msg.ok { background: rgba(74, 222, 128, 0.08); color: var(--ok); border: 1px solid rgba(74, 222, 128, 0.25); }
+
+  .back { display: inline-block; margin-top: 24px; font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .card { padding: 22px 18px; }
+    .grid2 { grid-template-columns: 1fr; }
+    .btn-row { flex-direction: column; }
+    .btn.ghost { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>固件重命名（SHA-256 指纹）</h1>
+  <p class="subtitle">
+    读取 ESP-IDF 固件 <code>esp_app_desc</code> 的版本号、编译时间与 <code>app_elf_sha256</code>，
+    按 <code>型号_协议_电压轮径限速_客户_版本_时间_8位SHA.ext</code> 规则重命名并下载。
+    全部处理均在浏览器本地完成，文件不会上传到任何服务器。
+  </p>
+
+  <div class="dropzone" id="dropzone">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="dz-text" id="dzText">点击选择或拖入固件文件</div>
+    <div class="dz-hint" id="dzHint">支持 .bin / .gbl，可一并拖入同名 .elf 做反向校验</div>
+    <div class="dz-hint" id="dzElf"><span id="elfText">或</span> <a id="elfPick">选择 .elf 文件</a></div>
+  </div>
+  <input type="file" id="fileInput" accept=".bin,.gbl" hidden>
+  <input type="file" id="elfInput" accept=".elf" hidden>
+
+  <section class="panel">
+    <h2 class="panel-title">1. 固件信息（自动读取）</h2>
+    <div class="info-row"><span class="info-key">版本号</span><span class="info-val empty" id="infoVersion">--</span></div>
+    <div class="info-row"><span class="info-key">编译时间</span><span class="info-val empty" id="infoTime">--</span></div>
+    <div class="info-row"><span class="info-key">ELF SHA-256</span><span class="info-val mono empty" id="infoElfSha">--</span></div>
+    <div class="info-row"><span class="info-key">BIN SHA-256</span><span class="info-val mono empty" id="infoBinSha">--</span></div>
+    <div class="info-row"><span class="info-key">自校验</span><span class="info-val empty" id="infoVerify">--</span></div>
+    <div class="info-row"><span class="info-key">工程 / 芯片</span><span class="info-val empty" id="infoProject">--</span></div>
+    <div class="info-row"><span class="info-key">CRC32</span><span class="info-val mono empty" id="infoCrc">--</span></div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel-title">2. 产品信息（手动输入）</h2>
+    <div class="grid2">
+      <div class="field"><label for="model">产品型号</label><input type="text" id="model" placeholder="CDC60X"></div>
+      <div class="field"><label for="protocol">协议类型</label><input type="text" id="protocol" placeholder="MultiProtocolC"></div>
+      <div class="field"><label for="voltage">电压 (V)</label><input type="text" id="voltage" placeholder="48"></div>
+      <div class="field"><label for="wheel">轮径 (in)</label><input type="text" id="wheel" placeholder="27"></div>
+      <div class="field"><label for="speed">限速 (km/h)</label><input type="text" id="speed" placeholder="25"></div>
+      <div class="field"><label for="customer">客户名称</label><input type="text" id="customer" placeholder="CD"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel-title">3. 命名选项</h2>
+    <div class="field">
+      <label>输出类型</label>
+      <div class="radio-group">
+        <label><input type="radio" name="fileType" value=".bin" checked><span>.bin</span></label>
+        <label><input type="radio" name="fileType" value=".gbl"><span>.gbl</span></label>
+      </div>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label>文件名时间来源</label>
+      <div class="radio-group">
+        <label><input type="radio" name="timeSource" value="appdesc" checked><span>app_desc 编译时间</span></label>
+        <label><input type="radio" name="timeSource" value="mtime"><span>文件修改时间</span></label>
+      </div>
+    </div>
+    <label class="check-row"><input type="checkbox" id="genManifest" checked> 同时生成 .json 清单</label>
+
+    <div class="preview-box">
+      <div class="preview-label">文件名预览</div>
+      <div class="preview-name" id="namePreview">--</div>
+    </div>
+  </section>
+
+  <div class="btn-row">
+    <button class="btn" id="saveBtn" disabled>生成并下载固件</button>
+    <button class="btn ghost" id="manifestBtn" disabled>下载 .json 清单</button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <a class="back" href="./">&larr; 返回首页</a>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+
+  /* ==================== 常量（与 firmware_renamer_sha256.py 一致） ==================== */
+  const APP_DESC_MAGIC = 0xABCD5432;   // esp_app_desc_t.magic_word
+  const ESP_IMAGE_MAGIC = 0xE9;        // esp_image_header_t.magic
+  const APP_DESC_SIZE = 256;           // sizeof(esp_app_desc_t)
+  const APP_DESC_OFFSET = 0x20;        // 24 字节镜像头 + 8 字节段头
+  const OFFSET_ELF_SHA_IN_DESC = 0x90; // app_elf_sha256 在 app_desc 内偏移
+  const OFFSET_APP = 0x10000;          // app 分区烧录地址
+  const OFFSET_CHIP_ID_IN_IMAGE = 0x0C;
+  const CHIP_ID_ESP32S3 = 9;
+  const ELF_SHA_LEN = 32;
+  const APP_DESC_CANDIDATES = [APP_DESC_OFFSET, OFFSET_APP + APP_DESC_OFFSET];
+  const SHA_NAME_LEN = 8;
+  const TIME_SOURCE_APPDESC = 'appdesc';
+  const TIME_SOURCE_MTIME = 'mtime';
+  const CONFIG_KEY = 'fw_renamer_sha256_config';
+
+  /* ==================== 二进制读取小工具 ==================== */
+  const readU16 = (b, off) => b[off] | (b[off + 1] << 8);
+  const readU32 = (b, off) =>
+    (b[off] | (b[off + 1] << 8) | (b[off + 2] << 16) | (b[off + 3] << 24)) >>> 0;
+
+  /** 读取定长 C 字符串，截断到首个 \0 并去除首尾空白 */
+  function readCstr(buf, offset, length) {
+    let end = offset;
+    const limit = Math.min(offset + length, buf.length);
+    while (end < limit && buf[end] !== 0) end++;
+    return new TextDecoder('utf-8').decode(buf.subarray(offset, end)).trim();
+  }
+
+  function toHex(bytes) {
+    const out = new Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) out[i] = bytes[i].toString(16).padStart(2, '0');
+    return out.join('');
+  }
+
+  /** zlib 一致的 CRC32（多项 0xEDB88320） */
+  function crc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) {
+      crc ^= bytes[i];
+      for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (0xEDB88320 & -(crc & 1));
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function sha256Hex(bytes) {
+    if (!(window.crypto && window.crypto.subtle)) {
+      return Promise.reject(new Error('当前环境不支持 Web Crypto，请通过 https 或 localhost 打开本页面'));
+    }
+    return window.crypto.subtle.digest('SHA-256', bytes).then(buf => toHex(new Uint8Array(buf)));
+  }
+
+  /* ==================== 时间格式化 ==================== */
+  const pad2 = n => String(n).padStart(2, '0');
+
+  function formatDateTime(d) {
+    return String(d.getFullYear() % 100).padStart(2, '0') + pad2(d.getMonth() + 1) +
+           pad2(d.getDate()) + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+  }
+
+  const formatTimestamp = ms => (ms ? formatDateTime(new Date(ms)) : '');
+
+  const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+                   Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+
+  /** 把 app_desc 的 "Aug 14 2026" + "10:13:50" 转成 260814101350；失败则回退 mtime */
+  function formatBuildTime(dateStr, timeStr, fallbackMs) {
+    const normalized = (dateStr.split(/\s+/).join(' ') + ' ' + timeStr.split(/\s+/).join(' ')).trim();
+    const m = normalized.match(/^([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
+    if (!m || !(m[1] in MONTHS)) return formatTimestamp(fallbackMs);
+    return formatDateTime(new Date(+m[3], MONTHS[m[1]], +m[2], +m[4], +m[5], +m[6]));
+  }
+
+  function nowString() {
+    const d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' +
+           pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+
+  /* ==================== 固件解析 ==================== */
+  function locateAppDesc(bytes) {
+    for (const base of APP_DESC_CANDIDATES) {
+      if (base + APP_DESC_SIZE > bytes.length) continue;
+      if (readU32(bytes, base) === APP_DESC_MAGIC) return base;
+    }
+    return null;
+  }
+
+  function parseFirmware(bytes, mtime) {
+    if (bytes.length < APP_DESC_OFFSET + APP_DESC_SIZE) {
+      throw new Error('文件太小，不是有效的 ESP-IDF 固件');
+    }
+    const base = locateAppDesc(bytes);
+    if (base === null) {
+      throw new Error('未找到 esp_app_desc（magic 0x' + APP_DESC_MAGIC.toString(16).toUpperCase() +
+                      '），该文件不是 ESP-IDF 应用镜像');
+    }
+    const imgStart = base - APP_DESC_OFFSET;
+    if (imgStart < 0 || bytes[imgStart] !== ESP_IMAGE_MAGIC) {
+      const magic = imgStart >= 0 ? '0x' + bytes[imgStart].toString(16).padStart(2, '0').toUpperCase() : '--';
+      throw new Error('镜像头 magic ' + magic + ' 无效，文件可能已损坏');
+    }
+
+    const desc = bytes.subarray(base, base + APP_DESC_SIZE);
+    const elfShaRaw = desc.subarray(OFFSET_ELF_SHA_IN_DESC, OFFSET_ELF_SHA_IN_DESC + ELF_SHA_LEN);
+    const compileDate = readCstr(desc, 0x60, 16);
+    const compileTime = readCstr(desc, 0x50, 16);
+
+    return {
+      fileSize: bytes.length,
+      appDescOffset: base,
+      elfShaOffset: base + OFFSET_ELF_SHA_IN_DESC,
+      chipId: readU16(bytes, imgStart + OFFSET_CHIP_ID_IN_IMAGE),
+      version: readCstr(desc, 0x10, 32),
+      projectName: readCstr(desc, 0x30, 32),
+      date: compileDate,
+      time: compileTime,
+      idfVer: readCstr(desc, 0x70, 32),
+      buildTimeName: formatBuildTime(compileDate, compileTime, mtime),
+      mtimeTimeName: formatTimestamp(mtime),
+      elfSha256: toHex(elfShaRaw),
+      elfSha256Valid: elfShaRaw.some(b => b !== 0),
+      crc32: crc32(bytes)
+    };
+  }
+
+  /* ==================== 命名规则 ==================== */
+  function getTimeName(info, source) {
+    if (source === TIME_SOURCE_MTIME) return info.mtimeTimeName || info.buildTimeName;
+    return info.buildTimeName || info.mtimeTimeName;
+  }
+
+  /** 型号_协议_电压轮径限速_客户_版本_时间简写_8位SHA.ext */
+  function buildTargetName(p) {
+    const params = p.voltage + p.wheel + p.speed;
+    const shaShort = p.elfSha256.slice(0, SHA_NAME_LEN).toLowerCase();
+    const parts = [p.product, p.protocol, params, p.customer, p.version, p.buildTime, shaShort];
+    return parts.filter(Boolean).join('_') + p.ext;
+  }
+
+  /* ==================== 页面状态 ==================== */
+  let firmware = null;    // { name, bytes, mtime }
+  let info = null;        // parseFirmware() 结果
+  let elfFile = null;     // 可选的同名 .elf
+  let elfHash = null;     // sha256(elf)
+
+  const msg = $('msg');
+  const dropzone = $('dropzone');
+  const fileInput = $('fileInput');
+  const elfInput = $('elfInput');
+
+  const FIELDS = ['model', 'protocol', 'voltage', 'wheel', 'speed', 'customer'];
+  const DEFAULTS = {
+    model: 'CDC60X', protocol: 'MultiProtocolC', voltage: '48',
+    wheel: '27', speed: '25', customer: 'CD',
+    fileType: '.bin', timeSource: TIME_SOURCE_APPDESC, manifest: true
+  };
+
+  /* ---------- 配置记忆（对应 Python 版的 .ini） ---------- */
+  function loadConfig() {
+    try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function saveConfig() {
+    try {
+      localStorage.setItem(CONFIG_KEY, JSON.stringify({
+        model: $('model').value.trim(),
+        protocol: $('protocol').value.trim(),
+        voltage: $('voltage').value.trim(),
+        wheel: $('wheel').value.trim(),
+        speed: $('speed').value.trim(),
+        customer: $('customer').value.trim(),
+        fileType: currentFileType(),
+        timeSource: currentTimeSource(),
+        manifest: $('genManifest').checked
+      }));
+    } catch (e) { /* 隐私模式下忽略 */ }
+  }
+
+  function applyConfig() {
+    const cfg = Object.assign({}, DEFAULTS, loadConfig());
+    FIELDS.forEach(k => { $(k).value = cfg[k]; });
+    const typeEl = document.querySelector('input[name="fileType"][value="' + cfg.fileType + '"]');
+    if (typeEl) typeEl.checked = true;
+    const srcEl = document.querySelector('input[name="timeSource"][value="' + cfg.timeSource + '"]');
+    if (srcEl) srcEl.checked = true;
+    $('genManifest').checked = cfg.manifest !== false;
+  }
+
+  const currentFileType = () => document.querySelector('input[name="fileType"]:checked').value;
+  const currentTimeSource = () => document.querySelector('input[name="timeSource"]:checked').value;
+
+  /* ---------- 文件选择 ---------- */
+  dropzone.addEventListener('click', () => fileInput.click());
+  $('elfPick').addEventListener('click', e => { e.stopPropagation(); elfInput.click(); });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) loadFirmware(fileInput.files[0]);
+  });
+  elfInput.addEventListener('change', () => {
+    if (elfInput.files.length) loadElf(elfInput.files[0]);
+  });
+
+  ['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+  }));
+  dropzone.addEventListener('drop', e => {
+    const files = Array.from(e.dataTransfer.files);
+    if (!files.length) return;
+    const elf = files.find(f => /\.elf$/i.test(f.name));
+    const bin = files.find(f => /\.(bin|gbl)$/i.test(f.name)) || files.find(f => !/\.elf$/i.test(f.name));
+    if (bin) loadFirmware(bin);
+    else if (elf) loadElf(elf);
+    if (bin && elf) loadElf(elf);
+  });
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  function setInfoValue(el, text, cls) {
+    el.textContent = text;
+    el.className = 'info-val ' + (cls || '');
+  }
+
+  /* ---------- 载入并解析固件 ---------- */
+  function loadFirmware(file) {
+    hideMsg();
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const bytes = new Uint8Array(reader.result);
+        info = parseFirmware(bytes, file.lastModified);
+        info.binSha256 = await sha256Hex(bytes);
+        firmware = { name: file.name, bytes: bytes, mtime: file.lastModified };
+
+        const dzText = $('dzText');
+        dzText.textContent = file.name;
+        dzText.className = 'file-name';
+        $('dzHint').textContent = formatSize(bytes.length);
+
+        renderInfo();
+        updateButtons();
+        updatePreview();
+        showMsg('ok', '已解析：' + file.name + '（' + formatSize(bytes.length) + '）');
+      } catch (e) {
+        firmware = null; info = null;
+        renderInfo(true);
+        updateButtons();
+        updatePreview();
+        showMsg('error', e.message || String(e));
+      }
+    };
+    reader.onerror = () => showMsg('error', '文件读取失败，请重试');
+    reader.readAsArrayBuffer(file);
+  }
+
+  function loadElf(file) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        elfFile = file;
+        elfHash = await sha256Hex(new Uint8Array(reader.result));
+        $('elfText').textContent = '已加载 ELF：' + file.name + ' ·';
+        $('elfPick').textContent = '重新选择';
+        if (info) renderInfo();
+      } catch (e) {
+        showMsg('error', 'ELF 读取失败：' + (e.message || e));
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  /* ---------- 信息面板 ---------- */
+  function renderInfo(failed) {
+    if (!info) {
+      const placeholder = failed ? ['--', '--', '--', '--', '--', '--', '--'] : null;
+      const ids = ['infoVersion', 'infoTime', 'infoElfSha', 'infoBinSha', 'infoVerify', 'infoProject', 'infoCrc'];
+      ids.forEach((id, i) => setInfoValue($(id), placeholder ? placeholder[i] : '--', 'empty'));
+      if (failed) setInfoValue($('infoVerify'), '解析失败，请确认选择的是 ESP-IDF 固件', 'err');
+      return;
+    }
+
+    setInfoValue($('infoVersion'),
+      info.version + (info.idfVer ? '   (IDF ' + info.idfVer + ')' : ''),
+      info.version ? '' : 'warn');
+    setInfoValue($('infoTime'),
+      '编译 ' + (info.buildTimeName || '--') + ' / 文件 ' + (info.mtimeTimeName || '--') +
+      '   (app_desc: ' + (info.date || '?') + ' ' + (info.time || '?') + ')');
+    setInfoValue($('infoElfSha'), info.elfSha256, 'mono' + (info.elfSha256Valid ? '' : ' warn'));
+    setInfoValue($('infoBinSha'), info.binSha256 || '计算中…', 'mono');
+
+    const notes = [];
+    let cls = '';
+    if (!info.elfSha256Valid) {
+      notes.push('app_elf_sha256 为全 0，可能不是 elf2image 正常产物');
+      cls = 'warn';
+    }
+    if (info.chipId !== CHIP_ID_ESP32S3) {
+      notes.push('chip_id=' + info.chipId + ' 不是 ESP32-S3(' + CHIP_ID_ESP32S3 + ')');
+      cls = 'warn';
+    }
+    if (elfHash) {
+      if (elfHash === info.elfSha256) {
+        notes.push('已与 ' + elfFile.name + ' 的 sha256 比对：一致');
+      } else {
+        notes.push('警告：与 ' + elfFile.name + ' 的 sha256 不一致，文件可能被改动过');
+        cls = 'err';
+      }
+    } else {
+      notes.push('未提供同名 .elf，未做反向校验');
+    }
+    notes.push('app_desc@0x' + info.appDescOffset.toString(16).toUpperCase() +
+               ' / elf_sha256@0x' + info.elfShaOffset.toString(16).toUpperCase());
+    setInfoValue($('infoVerify'), notes.join('；'), cls);
+
+    setInfoValue($('infoProject'),
+      (info.projectName || '--') + '   ·   chip_id=' + info.chipId,
+      info.projectName ? '' : 'warn');
+    setInfoValue($('infoCrc'),
+      '0x' + info.crc32.toString(16).toUpperCase().padStart(8, '0') + '   ·   ' + formatSize(info.fileSize),
+      'mono');
+  }
+
+  /* ---------- 文件名预览 ---------- */
+  function currentParams() {
+    return {
+      product: $('model').value.trim(),
+      protocol: $('protocol').value.trim(),
+      voltage: $('voltage').value.trim(),
+      wheel: $('wheel').value.trim(),
+      speed: $('speed').value.trim(),
+      customer: $('customer').value.trim(),
+      ext: currentFileType()
+    };
+  }
+
+  function updatePreview() {
+    if (!info) { $('namePreview').textContent = '--'; return; }
+    const p = currentParams();
+    p.version = info.version;
+    p.buildTime = getTimeName(info, currentTimeSource());
+    p.elfSha256 = info.elfSha256;
+    $('namePreview').textContent = buildTargetName(p);
+  }
+
+  function updateButtons() {
+    $('saveBtn').disabled = !info;
+    $('manifestBtn').disabled = !info || !$('genManifest').checked;
+  }
+
+  /* ---------- 生成与下载 ---------- */
+  function requireReady() {
+    if (!info || !firmware) {
+      showMsg('error', '请先选择并解析固件文件');
+      return false;
+    }
+    const labels = { model: '产品型号', protocol: '协议类型', voltage: '电压',
+                     wheel: '轮径', speed: '限速', customer: '客户名称' };
+    const empty = FIELDS.filter(k => !$(k).value.trim()).map(k => labels[k]);
+    if (empty.length) {
+      showMsg('error', '以下项不能为空：' + empty.join('、'));
+      return false;
+    }
+    if (!info.version) {
+      showMsg('error', '固件 app_desc 中未读到版本号，无法命名');
+      return false;
+    }
+    return true;
+  }
+
+  function targetName() {
+    const p = currentParams();
+    p.version = info.version;
+    p.buildTime = getTimeName(info, currentTimeSource());
+    p.elfSha256 = info.elfSha256;
+    return buildTargetName(p);
+  }
+
+  function buildManifest(name) {
+    return {
+      file: name,
+      project_name: info.projectName,
+      version: info.version,
+      compile_date: info.date,
+      compile_time: info.time,
+      idf_ver: info.idfVer,
+      elf_sha256: info.elfSha256,
+      bin_sha256: info.binSha256,
+      crc32: '0x' + info.crc32.toString(16).toUpperCase().padStart(8, '0'),
+      file_size: info.fileSize,
+      source_file: firmware.name,
+      renamed_at: nowString()
+    };
+  }
+
+  function download(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  $('saveBtn').addEventListener('click', () => {
+    hideMsg();
+    if (!requireReady()) return;
+    const name = targetName();
+    download(new Blob([firmware.bytes], { type: 'application/octet-stream' }), name);
+    saveConfig();
+
+    let text = '固件已生成：' + name + '\n' +
+               '大小：' + formatSize(firmware.bytes.length) + '\n' +
+               'SHA-256（ELF）：' + info.elfSha256 + '\n' +
+               'SHA-256（BIN）：' + info.binSha256;
+    if ($('genManifest').checked) text += '\n请点击「下载 .json 清单」保存同名清单文件';
+    showMsg('ok', text);
+  });
+
+  $('manifestBtn').addEventListener('click', () => {
+    hideMsg();
+    if (!requireReady()) return;
+    const name = targetName();
+    const json = JSON.stringify(buildManifest(name), null, 4);
+    download(new Blob([json], { type: 'application/json;charset=utf-8' }),
+             name.replace(/\.[^.]+$/, '') + '.json');
+    saveConfig();
+    showMsg('ok', '清单已生成：' + name.replace(/\.[^.]+$/, '') + '.json');
+  });
+
+  /* ---------- 消息 ---------- */
+  function showMsg(type, text) {
+    msg.className = 'msg show ' + type;
+    msg.textContent = text;
+  }
+  function hideMsg() {
+    msg.className = 'msg';
+    msg.textContent = '';
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  FIELDS.forEach(k => {
+    $(k).addEventListener('input', () => { updatePreview(); saveConfig(); });
+  });
+  document.querySelectorAll('input[name="fileType"]').forEach(el => {
+    el.addEventListener('change', () => { updatePreview(); saveConfig(); });
+  });
+  document.querySelectorAll('input[name="timeSource"]').forEach(el => {
+    el.addEventListener('change', () => { updatePreview(); saveConfig(); });
+  });
+  $('genManifest').addEventListener('change', () => { updateButtons(); saveConfig(); });
+
+  /* ---------- 初始化 ---------- */
+  applyConfig();
+  updatePreview();
+  renderInfo();
+  updateButtons();
+})();
+</script>
+</body>
+</html>
