@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIN 差分补丁生成</title>
+<style>
+  :root {
+    --bg: #050505;
+    --card: #101014;
+    --border: #232329;
+    --text: #e8e8ec;
+    --muted: #8b8b95;
+    --accent: #6ea8fe;
+    --accent-strong: #8bbcff;
+    --error: #ff6b6b;
+    --ok: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 720px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+  }
+  h1 { font-size: 22px; margin: 0 0 8px; font-weight: 600; }
+  .subtitle { color: var(--muted); font-size: 13px; line-height: 1.8; margin: 0 0 24px; }
+  .subtitle code { color: var(--accent); font-size: 12px; word-break: break-all; }
+
+  /* 文件选择 */
+  .files { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    padding: 22px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--accent);
+    background: rgba(110, 168, 254, 0.06);
+  }
+  .dropzone.filled { border-style: solid; }
+  .dz-label { font-size: 12px; color: var(--muted); letter-spacing: .04em; margin-bottom: 8px; }
+  .dz-text { font-size: 13px; }
+  .dz-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .file-name { font-size: 13px; color: var(--accent); word-break: break-all; line-height: 1.6; }
+  .file-size { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .between { display: flex; justify-content: center; margin: 14px 0 4px; }
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .link-btn:hover { color: var(--accent-strong); background: rgba(110, 168, 254, 0.08); }
+
+  /* 说明与结果 */
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-top: 20px;
+    background: #0b0b0f;
+  }
+  .panel-title { margin: 0 0 12px; font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: .04em; }
+  .kv { display: flex; gap: 12px; font-size: 12px; padding: 5px 0; }
+  .kv > span:first-child { flex: none; width: 132px; color: var(--muted); }
+  .kv > span:last-child { flex: 1; min-width: 0; word-break: break-all; }
+  .kv .mono { font-family: Consolas, "Courier New", monospace; }
+
+  .btn {
+    width: 100%;
+    padding: 13px 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #050505;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+    margin-top: 20px;
+  }
+  .btn:hover { background: var(--accent-strong); }
+  .btn:disabled { background: #2a2a32; color: var(--muted); cursor: not-allowed; }
+
+  .msg {
+    display: none;
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .msg.show { display: block; }
+  .msg.error { background: rgba(255, 107, 107, 0.1); color: var(--error); border: 1px solid rgba(255, 107, 107, 0.3); }
+  .msg.ok { background: rgba(74, 222, 128, 0.08); color: var(--ok); border: 1px solid rgba(74, 222, 128, 0.25); }
+
+  .back { display: inline-block; margin-top: 24px; font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .card { padding: 22px 18px; }
+    .files { grid-template-columns: 1fr; }
+    .kv > span:first-child { width: 104px; }
+  }
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>BIN 差分补丁生成</h1>
+  <p class="subtitle">
+    选择旧版本与新版本固件，在浏览器本地计算差分（bsdiff 思路）并用 <code>heatshrink</code> 压缩，
+    输出设备可直接使用的 <code>patch_1_2.bin</code>。全部处理均在本地完成，文件不会上传。
+  </p>
+
+  <div class="files">
+    <div class="dropzone" id="drop1">
+      <div class="dz-label">BIN 文件 1 · 旧版本</div>
+      <div class="dz-text" id="text1">点击选择或拖入</div>
+      <div class="dz-hint" id="hint1">.bin</div>
+    </div>
+    <div class="dropzone" id="drop2">
+      <div class="dz-label">BIN 文件 2 · 新版本</div>
+      <div class="dz-text" id="text2">点击选择或拖入</div>
+      <div class="dz-hint" id="hint2">.bin</div>
+    </div>
+  </div>
+  <input type="file" id="file1" accept=".bin" hidden>
+  <input type="file" id="file2" accept=".bin" hidden>
+
+  <div class="between">
+    <button class="link-btn" id="swapBtn">&uarr;&darr; 交换两个文件</button>
+  </div>
+
+  <section class="panel">
+    <h2 class="panel-title">补丁格式</h2>
+    <div class="kv"><span>压缩方式</span><span>heatshrink（window=8, lookahead=7）</span></div>
+    <div class="kv"><span>补丁类型</span><span>sequential（顺序差分）</span></div>
+    <div class="kv"><span>封装格式</span><span class="mono">0x3A + 4字节大小(LE) + 0x3B + 0x0D0A + 补丁，末尾补 0 至 128 字节整数倍</span></div>
+    <div class="kv"><span>输出文件</span><span class="mono">patch_1_2.bin</span></div>
+  </section>
+
+  <button class="btn" id="genBtn" disabled>生成差分补丁并下载</button>
+
+  <div class="msg" id="msg"></div>
+
+  <a class="back" href="./">&larr; 返回首页</a>
+</main>
+
+<script>
+/* ==================== 核心算法开始（与设备端 detools 顺序补丁格式一致） ==================== */
+
+/* 固件差分补丁容器格式
+ * 补丁文件 = [头部字节 0x04] + pack_size(目标大小) + [heatshrink 头字节 0x44] + heatshrink 位流
+ *   头部字节 = (补丁类型 0 << 4) | 压缩方式 4(heatshrink)
+ * 解压后的负载 = pack_size(dfpatch_size=0) + 若干三元组
+ *   三元组 = pack_size(差分长度) + 差分字节 + pack_size(新增长度) + 新增字节 + pack_size(旧数据偏移)
+ *   应用规则：差分字节与旧数据对应位置逐字节相加，新增字节直接追加，偏移用于移动旧数据读取位置
+ */
+
+var HS_WINDOW_SZ2 = 8;                        // heatshrink 窗口位数 -> 最大回溯距离 256
+var HS_LOOKAHEAD_SZ2 = 7;                     // heatshrink 前瞻位数 -> 最大匹配长度 128
+var HS_WINDOW = 1 << HS_WINDOW_SZ2;
+var HS_MAX_COUNT = 1 << HS_LOOKAHEAD_SZ2;
+var HS_MIN_COUNT = 2;
+
+var PATCH_HEADER_BYTE = 0x04;                 // 顺序补丁 + heatshrink
+var HS_HEADER_BYTE = ((HS_WINDOW_SZ2 - 4) << 4) | (HS_LOOKAHEAD_SZ2 - 3);   // 0x44
+
+var DIFF_HASH_BITS = 18;                      // 旧数据索引表大小 2^18
+var DIFF_HASH_LEN = 4;                        // 索引用的字节数
+var DIFF_MIN_MATCH = 12;                      // 可接受的最短匹配长度
+var DIFF_MAX_EXTEND = 48;                     // 差异容忍扩展上限
+var DIFF_SUM_ABS_LIMIT = 8;                   // 扩展时累计绝对差值上限（参考 bsdiff）
+
+/* ---------- 可增长字节缓冲 ---------- */
+function ByteBuffer(capacity) {
+  this.buf = new Uint8Array(capacity > 0 ? capacity : 1024);
+  this.len = 0;
+}
+
+ByteBuffer.prototype.ensure = function (extra) {
+  var need = this.len + extra;
+  if (need <= this.buf.length) {
+    return;
+  }
+  var cap = this.buf.length;
+  while (cap < need) {
+    cap *= 2;
+  }
+  var next = new Uint8Array(cap);
+  next.set(this.buf.subarray(0, this.len));
+  this.buf = next;
+};
+
+ByteBuffer.prototype.pushByte = function (value) {
+  this.ensure(1);
+  this.buf[this.len++] = value & 0xff;
+};
+
+ByteBuffer.prototype.pushBytes = function (bytes) {
+  this.ensure(bytes.length);
+  this.buf.set(bytes, this.len);
+  this.len += bytes.length;
+};
+
+ByteBuffer.prototype.pushSpan = function (src, start, count) {
+  this.ensure(count);
+  this.buf.set(src.subarray(start, start + count), this.len);
+  this.len += count;
+};
+
+ByteBuffer.prototype.toBytes = function () {
+  return this.buf.slice(0, this.len);
+};
+
+/* ---------- 可变长整数（与 detools 完全一致的 pack_size） ---------- */
+function packSize(value, buffer) {
+  var negative = value < 0;
+  var rest = negative ? -value : value;
+  var first = rest % 64;
+  if (negative) {
+    first |= 0x40;
+  }
+  rest = Math.floor(rest / 64);
+  if (rest === 0) {
+    buffer.pushByte(first);
+    return;
+  }
+  buffer.pushByte(first | 0x80);
+  while (rest >= 0x80) {
+    buffer.pushByte((rest % 128) | 0x80);
+    rest = Math.floor(rest / 128);
+  }
+  buffer.pushByte(rest);
+}
+
+/* ---------- 位写入（MSB 优先，与 heatshrink 位流一致） ---------- */
+function BitWriter() {
+  this.bytes = [];
+  this.acc = 0;
+  this.nbits = 0;
+}
+
+BitWriter.prototype.push = function (value, count) {
+  for (var i = count - 1; i >= 0; i--) {
+    this.acc = (this.acc << 1) | ((value >> i) & 1);
+    this.nbits++;
+    if (this.nbits === 8) {
+      this.bytes.push(this.acc);
+      this.acc = 0;
+      this.nbits = 0;
+    }
+  }
+};
+
+BitWriter.prototype.finish = function () {
+  if (this.nbits > 0) {
+    this.bytes.push(this.acc << (8 - this.nbits));   // 末字节补 0
+    this.acc = 0;
+    this.nbits = 0;
+  }
+  return this.bytes;
+};
+
+/* ---------- heatshrink 压缩（tag1=字面量，tag0=距离-1 + 计数-1） ---------- */
+function hash3(data, index, bits) {
+  var key = ((data[index] << 16) ^ (data[index + 1] << 8) ^ data[index + 2]) >>> 0;
+  return (Math.imul(key, 2654435761) >>> (32 - bits)) >>> 0;
+}
+
+function heatshrinkCompress(data, out) {
+  out.pushByte(HS_HEADER_BYTE);
+
+  var size = data.length;
+  if (size === 0) {
+    return;
+  }
+
+  var HASH_BITS = 12;
+  var table = new Int32Array(1 << HASH_BITS);
+  table.fill(-1);
+  var prev = new Int32Array(size);
+  prev.fill(-1);
+  var writer = new BitWriter();
+
+  var index = 0;
+  while (index < size) {
+    var limit = Math.min(HS_MAX_COUNT, size - index);
+    var bestLen = 0;
+    var bestDist = 0;
+
+    if (limit >= HS_MIN_COUNT && index + 3 <= size) {
+      var candidate = table[hash3(data, index, HASH_BITS)];
+      var depth = 0;
+      while (candidate >= 0 && index - candidate <= HS_WINDOW && depth < 16) {
+        if (data[candidate] === data[index] && data[candidate + 1] === data[index + 1]) {
+          var length = 2;
+          while (length < limit && data[candidate + length] === data[index + length]) {
+            length++;
+          }
+          if (length > bestLen) {
+            bestLen = length;
+            bestDist = index - candidate;
+            if (length === limit) {
+              break;
+            }
+          }
+        }
+        candidate = prev[candidate];
+        depth++;
+      }
+    }
+
+    var advance;
+    if (bestLen >= HS_MIN_COUNT) {
+      writer.push(0, 1);
+      writer.push(bestDist - 1, HS_WINDOW_SZ2);
+      writer.push(bestLen - 1, HS_LOOKAHEAD_SZ2);
+      advance = bestLen;
+    } else {
+      writer.push(1, 1);
+      writer.push(data[index], 8);
+      advance = 1;
+    }
+
+    var stop = Math.min(index + advance, size - 2);
+    for (var k = index; k < stop; k++) {
+      var h = hash3(data, k, HASH_BITS);
+      prev[k] = table[h];
+      table[h] = k;
+    }
+    index += advance;
+  }
+
+  out.pushBytes(writer.finish());
+}
+
+/* ---------- 差分：在旧数据里为新区块找最长匹配（哈希索引 + 贪心） ---------- */
+function hash4(data, index, bits) {
+  var key = ((data[index] << 24) | (data[index + 1] << 16) |
+             (data[index + 2] << 8) | data[index + 3]) >>> 0;
+  return (Math.imul(key, 2654435761) >>> (32 - bits)) >>> 0;
+}
+
+function buildOps(oldData, newData) {
+  var oldSize = oldData.length;
+  var newSize = newData.length;
+  var table = new Int32Array(1 << DIFF_HASH_BITS);
+  table.fill(-1);
+
+  for (var p = 0; p + DIFF_HASH_LEN <= oldSize; p++) {
+    table[hash4(oldData, p, DIFF_HASH_BITS)] = p;
+  }
+
+  var ops = [];
+  var pos = 0;
+  var literalStart = -1;
+
+  function flushLiteral(end) {
+    if (literalStart >= 0) {
+      ops.push({ copy: false, start: literalStart, len: end - literalStart });
+      literalStart = -1;
+    }
+  }
+
+  while (pos < newSize) {
+    var matchPos = -1;
+    var matchLen = 0;
+
+    if (pos + DIFF_HASH_LEN <= newSize) {
+      var candidate = table[hash4(newData, pos, DIFF_HASH_BITS)];
+      if (candidate >= 0) {
+        var maxLen = Math.min(oldSize - candidate, newSize - pos);
+        var len = 0;
+        while (len < maxLen && oldData[candidate + len] === newData[pos + len]) {
+          len++;
+        }
+        if (len >= DIFF_MIN_MATCH) {
+          matchPos = candidate;
+          matchLen = len;
+        }
+      }
+    }
+
+    if (matchPos >= 0) {
+      // 差异容忍扩展：累计绝对差值 < 8 的字节并入差分区域，避免频繁产生新增块
+      var sumAbs = 0;
+      var extended = 0;
+      while (extended < DIFF_MAX_EXTEND &&
+             pos + matchLen < newSize &&
+             matchPos + matchLen < oldSize) {
+        var delta = Math.abs(newData[pos + matchLen] - oldData[matchPos + matchLen]);
+        if (sumAbs + delta >= DIFF_SUM_ABS_LIMIT) {
+          break;
+        }
+        sumAbs += delta;
+        matchLen++;
+        extended++;
+      }
+      flushLiteral(pos);
+      ops.push({ copy: true, oldPos: matchPos, start: pos, len: matchLen });
+      pos += matchLen;
+    } else {
+      if (literalStart < 0) {
+        literalStart = pos;
+      }
+      pos++;
+    }
+  }
+
+  flushLiteral(newSize);
+  return ops;
+}
+
+/* ---------- 组装负载：pack_size(0) + 若干三元组 ---------- */
+function encodePayload(oldData, newData, buffer) {
+  var ops = buildOps(oldData, newData);
+  packSize(0, buffer);                        // dfpatch_size = 0（未使用 data_format）
+
+  var diffSpans = [];                          // 当前三元组内的差分片段（必须在新增片段之前）
+  var extraSpans = [];
+  var fromPos = 0;                             // 旧数据当前读取位置
+
+  function closeTriple(adjust) {
+    if (diffSpans.length === 0 && extraSpans.length === 0 && adjust === 0) {
+      return;
+    }
+    var diffLen = 0;
+    var i;
+    for (i = 0; i < diffSpans.length; i++) {
+      diffLen += diffSpans[i].len;
+    }
+    packSize(diffLen, buffer);
+    for (i = 0; i < diffSpans.length; i++) {
+      var span = diffSpans[i];
+      for (var k = 0; k < span.len; k++) {
+        buffer.pushByte((newData[span.start + k] - oldData[span.oldPos + k]) & 0xff);
+      }
+    }
+
+    var extraLen = 0;
+    for (i = 0; i < extraSpans.length; i++) {
+      extraLen += extraSpans[i].len;
+    }
+    packSize(extraLen, buffer);
+    for (i = 0; i < extraSpans.length; i++) {
+      buffer.pushSpan(newData, extraSpans[i].start, extraSpans[i].len);
+    }
+
+    packSize(adjust, buffer);
+    diffSpans = [];
+    extraSpans = [];
+  }
+
+  for (var index = 0; index < ops.length; index++) {
+    var op = ops[index];
+    if (op.copy) {
+      if (extraSpans.length > 0 || op.oldPos !== fromPos) {
+        // 新增块之后不能再放差分（应用顺序为 差分->新增），必须先收尾并移动到新的旧数据位置
+        closeTriple(op.oldPos - fromPos);
+        fromPos = op.oldPos;
+      }
+      diffSpans.push(op);
+      fromPos += op.len;
+    } else {
+      extraSpans.push(op);
+    }
+  }
+  closeTriple(0);
+}
+
+/* ---------- 生成补丁（detools 顺序补丁 + heatshrink） ---------- */
+function createPatchFile(oldData, newData) {
+  var targetSize = newData.length;
+  var output = new ByteBuffer(1024);
+  output.pushByte(PATCH_HEADER_BYTE);
+  packSize(targetSize, output);
+
+  if (targetSize === 0) {
+    return output.toBytes();
+  }
+
+  var payload = new ByteBuffer(Math.max(1024, targetSize >> 1));
+  encodePayload(oldData, newData, payload);
+  heatshrinkCompress(payload.toBytes(), output);
+  return output.toBytes();
+}
+
+/* ---------- 封装：0x3A + 大小(小端) + 0x3B + CRLF + 补丁 + 补 0 到 128 字节倍数 ---------- */
+function wrapPatch(patch) {
+  var FRAME = 8;                                          // 0x3A(1) + 大小(4) + 0x3B(1) + CRLF(2)
+  var total = patch.length + FRAME;
+  var padded = Math.ceil(total / 128) * 128;
+  var out = new Uint8Array(padded);
+  out[0] = 0x3A;
+  out[1] = patch.length & 0xff;
+  out[2] = (patch.length >>> 8) & 0xff;
+  out[3] = (patch.length >>> 16) & 0xff;
+  out[4] = (patch.length >>> 24) & 0xff;
+  out[5] = 0x3B;
+  out[6] = 0x0D;
+  out[7] = 0x0A;
+  out.set(patch, 8);
+  return out;                                             // 尾部自动为 0
+}
+
+/* ==================== 核心算法结束 ==================== */
+
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var slots = [
+    { drop: $('drop1'), input: $('file1'), text: $('text1'), hint: $('hint1'), data: null, name: '' },
+    { drop: $('drop2'), input: $('file2'), text: $('text2'), hint: $('hint2'), data: null, name: '' }
+  ];
+  var msg = $('msg');
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  function showMsg(type, text) {
+    msg.className = 'msg show ' + type;
+    msg.textContent = text;
+  }
+
+  function hideMsg() {
+    msg.className = 'msg';
+    msg.textContent = '';
+  }
+
+  function render() {
+    slots.forEach(function (slot) {
+      if (slot.data) {
+        slot.text.textContent = slot.name;
+        slot.text.className = 'file-name';
+        slot.hint.textContent = formatSize(slot.data.length);
+        slot.drop.classList.add('filled');
+      } else {
+        slot.text.textContent = '点击选择或拖入';
+        slot.text.className = 'dz-text';
+        slot.hint.textContent = '.bin';
+        slot.drop.classList.remove('filled');
+      }
+    });
+    $('genBtn').disabled = !(slots[0].data && slots[1].data);
+  }
+
+  function loadFile(slot, file) {
+    if (!/\.bin$/i.test(file.name)) {
+      showMsg('error', '请选择 .bin 文件');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      slot.data = new Uint8Array(reader.result);
+      slot.name = file.name;
+      hideMsg();
+      render();
+    };
+    reader.onerror = function () {
+      showMsg('error', '文件读取失败，请重试');
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  slots.forEach(function (slot) {
+    slot.drop.addEventListener('click', function () { slot.input.click(); });
+    slot.input.addEventListener('change', function () {
+      if (slot.input.files.length) loadFile(slot, slot.input.files[0]);
+    });
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      slot.drop.addEventListener(ev, function (e) {
+        e.preventDefault();
+        slot.drop.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      slot.drop.addEventListener(ev, function (e) {
+        e.preventDefault();
+        slot.drop.classList.remove('dragover');
+      });
+    });
+    slot.drop.addEventListener('drop', function (e) {
+      if (e.dataTransfer.files.length) loadFile(slot, e.dataTransfer.files[0]);
+    });
+  });
+
+  $('swapBtn').addEventListener('click', function () {
+    var tmpData = slots[0].data;
+    var tmpName = slots[0].name;
+    slots[0].data = slots[1].data;
+    slots[0].name = slots[1].name;
+    slots[1].data = tmpData;
+    slots[1].name = tmpName;
+    hideMsg();
+    render();
+  });
+
+  function sha256Hex(bytes) {
+    if (!(window.crypto && window.crypto.subtle)) {
+      return Promise.resolve('');
+    }
+    return window.crypto.subtle.digest('SHA-256', bytes).then(function (buf) {
+      var view = new Uint8Array(buf);
+      var hex = '';
+      for (var i = 0; i < view.length; i++) {
+        hex += view[i].toString(16).padStart(2, '0');
+      }
+      return hex;
+    });
+  }
+
+  $('genBtn').addEventListener('click', function () {
+    hideMsg();
+    if (!slots[0].data || !slots[1].data) {
+      showMsg('error', '请先选择两个 BIN 文件');
+      return;
+    }
+
+    var button = $('genBtn');
+    button.disabled = true;
+    button.textContent = '正在计算差分…';
+
+    setTimeout(function () {
+      var oldData = slots[0].data;
+      var newData = slots[1].data;
+
+      try {
+        var started = Date.now();
+        var patch = createPatchFile(oldData, newData);
+        var wrapped = wrapPatch(patch);
+        var elapsed = Date.now() - started;
+
+        var blob = new Blob([wrapped], { type: 'application/octet-stream' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'patch_1_2.bin';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+
+        sha256Hex(wrapped).then(function (hex) {
+          showMsg('ok',
+            '补丁已生成并开始下载：patch_1_2.bin\n' +
+            '旧版本：' + slots[0].name + '（' + formatSize(oldData.length) + '）\n' +
+            '新版本：' + slots[1].name + '（' + formatSize(newData.length) + '）\n' +
+            '差分补丁：' + patch.length + ' 字节（占新版本 ' +
+              (patch.length / newData.length * 100).toFixed(2) + '%）\n' +
+            '封装后：' + wrapped.length + ' 字节（128 字节对齐）\n' +
+            (hex ? 'SHA-256：' + hex + '\n' : '') +
+            '耗时：' + elapsed + ' ms'
+          );
+        });
+      } catch (e) {
+        showMsg('error', '生成失败：' + (e && e.message ? e.message : e));
+      } finally {
+        button.disabled = false;
+        button.textContent = '生成差分补丁并下载';
+      }
+    }, 30);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
